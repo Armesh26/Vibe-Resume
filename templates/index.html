@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe-Resume</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #151515;
+            --bg-tertiary: #1a1a1a;
+            --bg-elevated: #222222;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --accent: #ff6b35;
+            --accent-glow: rgba(255, 107, 53, 0.3);
+            --accent-secondary: #3b82f6;
+            --success: #4ade80;
+            --error: #f87171;
+            --border: #2a2a2a;
+            --border-hover: #3a3a3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                linear-gradient(180deg, var(--bg-primary) 0%, #0a0a0a 100%);
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--accent) 0%, #ff8f5a 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Editor Panel - LEFT */
+        .editor-panel {
+            width: 400px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease, opacity 0.3s ease;
+            overflow: hidden;
+        }
+
+        .editor-panel.collapsed {
+            width: 0;
+            border-right: none;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            min-height: 44px;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .panel-title svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--accent);
+        }
+
+        .editor-wrapper {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #latex-editor {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            border: none;
+            padding: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.4;
+            color: var(--text-primary);
+            resize: none;
+            outline: none;
+        }
+
+        .panel-footer {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.6rem;
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border);
+        }
+
+        /* Preview Panel - CENTER */
+        .preview-panel {
+            flex: 1;
+            background: var(--bg-secondary);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .pdf-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #404040;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pdf-placeholder {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem;
+        }
+
+        .pdf-placeholder svg {
+            width: 48px;
+            height: 48px;
+            stroke: var(--text-muted);
+            margin-bottom: 0.75rem;
+            opacity: 0.5;
+        }
+
+        .pdf-placeholder p {
+            font-size: 0.85rem;
+        }
+
+        #pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+            display: none;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.success { background: var(--success); }
+        .status-dot.error { background: var(--error); }
+        .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .status-text {
+            color: var(--text-secondary);
+        }
+
+        /* Chat Panel - RIGHT */
+        .chat-panel {
+            width: 340px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 0.6rem 1rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-height: 44px;
+        }
+
+        .chat-header svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--accent-secondary);
+        }
+
+        .chat-header span {
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .message {
+            max-width: 95%;
+            padding: 0.6rem 0.8rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .message.user {
+            background: var(--accent);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.system {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-secondary);
+            align-self: center;
+            font-size: 0.8rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .message.user {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .checkpoint-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.7rem;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.3rem;
+            align-self: flex-end;
+        }
+
+        .checkpoint-btn:hover {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: white;
+        }
+
+        .checkpoint-btn.active {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .checkpoint-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .chat-input-area {
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border);
+        }
+
+        .file-upload-area {
+            margin-bottom: 0.5rem;
+        }
+
+        .file-upload-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.6rem;
+            background: var(--bg-elevated);
+            border: 1px dashed var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .file-upload-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .file-upload-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .file-upload-btn.has-file {
+            border-color: var(--success);
+            color: var(--success);
+            border-style: solid;
+        }
+
+        #pdf-upload {
+            display: none;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 0.6rem 0.8rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            resize: none;
+            min-height: 38px;
+            max-height: 100px;
+        }
+
+        #chat-input:focus {
+            border-color: var(--accent-secondary);
+        }
+
+        #chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            width: 38px;
+            height: 38px;
+            background: var(--accent-secondary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            background: #2563eb;
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .send-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.5rem 0.9rem;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, #ff8f5a 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary.active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            font-size: 0.85rem;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .toast.error { border-color: var(--error); }
+        .toast.success { border-color: var(--success); }
+
+        .toast-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .toast.error .toast-icon { stroke: var(--error); }
+        .toast.success .toast-icon { stroke: var(--success); }
+
+        /* Loader */
+        .loader {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .loader.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 0.6rem 0.8rem;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .typing-indicator span {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .editor-panel:not(.collapsed) {
+                width: 320px;
+            }
+            .chat-panel {
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .editor-panel {
+                display: none;
+            }
+            .chat-panel {
+                width: 260px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <div class="logo">
+                    <div class="logo-icon">✨</div>
+                    <h1>Vibe-Resume</h1>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="toggleLatexBtn" onclick="toggleLatexView()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                    </svg>
+                    Show LaTeX
+                </button>
+                <button class="btn btn-secondary" id="downloadBtn" style="display: none;" onclick="downloadPDF()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Download
+                </button>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Editor Panel - LEFT -->
+            <div class="editor-panel collapsed" id="editorPanel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                        </svg>
+                        LaTeX Code
+                    </div>
+                </div>
+                <div class="editor-wrapper">
+                    <textarea id="latex-editor" placeholder="LaTeX code will appear here..."></textarea>
+                </div>
+                <div class="panel-footer">
+                    <button class="btn btn-primary" onclick="compilePDF()" style="flex:1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                        </svg>
+                        Compile
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearEditor()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview Panel - CENTER -->
+            <div class="preview-panel">
+                <div class="pdf-container">
+                    <div class="loader" id="loader">
+                        <div class="spinner"></div>
+                    </div>
+                    <div class="pdf-placeholder" id="placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        <p>Chat with AI to generate your resume</p>
+                    </div>
+                    <iframe id="pdf-viewer"></iframe>
+                </div>
+                <div class="status-bar">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span class="status-text" id="statusText">Ready</span>
+                </div>
+            </div>
+
+            <!-- Chat Panel - RIGHT -->
+            <div class="chat-panel">
+                <div class="chat-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                    </svg>
+                    <span>AI Assistant</span>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message system">
+                        Upload a PDF or describe your experience
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <div class="file-upload-area">
+                        <label class="file-upload-btn" id="fileUploadBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                            </svg>
+                            <span id="fileUploadText">Upload PDF</span>
+                            <input type="file" id="pdf-upload" accept=".pdf">
+                        </label>
+                    </div>
+                    <div class="chat-input-wrapper">
+                        <textarea id="chat-input" placeholder="Describe your resume..." rows="1"></textarea>
+                        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <svg class="toast-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+        </svg>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        let currentPdfUrl = null;
+        let selectedPdfFile = null;
+        let latexVisible = false;
+        let checkpointCounter = 0;
+
+        // File upload handling
+        document.getElementById('pdf-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedPdfFile = file;
+                document.getElementById('fileUploadBtn').classList.add('has-file');
+                document.getElementById('fileUploadText').textContent = file.name.substring(0, 20) + (file.name.length > 20 ? '...' : '');
+            }
+        });
+
+        // Auto-resize textarea
+        document.getElementById('chat-input').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+
+        // Enter to send
+        document.getElementById('chat-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function restoreCheckpoint(checkpointId, latexCode) {
+            document.getElementById('latex-editor').value = latexCode;
+            
+            // Mark this checkpoint as active, others as inactive
+            document.querySelectorAll('.checkpoint-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-checkpoint="${checkpointId}"]`)?.classList.add('active');
+            
+            addMessage(`↩️ Restored to checkpoint #${checkpointId}`, 'system');
+            compilePDF();
+        }
+
+        function toggleLatexView() {
+            latexVisible = !latexVisible;
+            const panel = document.getElementById('editorPanel');
+            const btn = document.getElementById('toggleLatexBtn');
+            
+            if (latexVisible) {
+                panel.classList.remove('collapsed');
+                btn.classList.add('active');
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                    </svg>
+                    Hide LaTeX`;
+            } else {
+                panel.classList.add('collapsed');
+                btn.classList.remove('active');
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                    </svg>
+                    Show LaTeX`;
+            }
+        }
+
+        function addMessage(content, type, checkpointData = null) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            if (checkpointData) {
+                // Create message with checkpoint button
+                const wrapper = document.createElement('div');
+                wrapper.className = 'message-with-checkpoint';
+                
+                const textSpan = document.createElement('span');
+                textSpan.textContent = content;
+                wrapper.appendChild(textSpan);
+                
+                const checkpointBtn = document.createElement('button');
+                checkpointBtn.className = 'checkpoint-btn';
+                checkpointBtn.dataset.checkpoint = checkpointData.id;
+                checkpointBtn.title = 'Restore to this point';
+                checkpointBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                    </svg>
+                    #${checkpointData.id}
+                `;
+                checkpointBtn.onclick = () => restoreCheckpoint(checkpointData.id, checkpointData.latex);
+                wrapper.appendChild(checkpointBtn);
+                
+                messageDiv.appendChild(wrapper);
+            } else {
+                messageDiv.textContent = content;
+            }
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const messagesDiv = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = '<span></span><span></span><span></span>';
+            messagesDiv.appendChild(typingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            const currentLatex = document.getElementById('latex-editor').value;
+            
+            if (!message && !selectedPdfFile) {
+                showToast('Please enter a message or upload a PDF', 'error');
+                return;
+            }
+
+            if (message) {
+                addMessage(message, 'user');
+            }
+            if (selectedPdfFile) {
+                addMessage(`📎 ${selectedPdfFile.name}`, 'user');
+            }
+
+            input.value = '';
+            input.style.height = 'auto';
+            document.getElementById('sendBtn').disabled = true;
+            addTypingIndicator();
+
+            try {
+                const formData = new FormData();
+                formData.append('message', message);
+                formData.append('current_latex', currentLatex);
+                if (selectedPdfFile) {
+                    formData.append('pdf', selectedPdfFile);
+                }
+
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                removeTypingIndicator();
+
+                if (data.success) {
+                    // Save current state as checkpoint before changing
+                    const previousLatex = document.getElementById('latex-editor').value;
+                    if (previousLatex.trim()) {
+                        checkpointCounter++;
+                        // Add checkpoint button to the last user message
+                        const userMessages = document.querySelectorAll('.message.user');
+                        const lastUserMessage = userMessages[userMessages.length - 1];
+                        if (lastUserMessage && !lastUserMessage.querySelector('.checkpoint-btn')) {
+                            const checkpointBtn = document.createElement('button');
+                            checkpointBtn.className = 'checkpoint-btn';
+                            checkpointBtn.dataset.checkpoint = checkpointCounter;
+                            checkpointBtn.title = 'Restore to before this change';
+                            checkpointBtn.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                                </svg>
+                                Restore
+                            `;
+                            const latexToRestore = previousLatex;
+                            const cpId = checkpointCounter;
+                            checkpointBtn.onclick = () => restoreCheckpoint(cpId, latexToRestore);
+                            lastUserMessage.appendChild(checkpointBtn);
+                        }
+                    }
+                    
+                    document.getElementById('latex-editor').value = data.latex_code;
+                    addMessage('✓ Generating PDF...', 'assistant');
+                    
+                    // Auto-generate PDF
+                    await compilePDF();
+                } else if (data.is_chat_response) {
+                    // This is a chat response, not an error - display it nicely
+                    addMessage(data.error, 'assistant');
+                } else {
+                    addMessage(`Error: ${data.error}`, 'assistant');
+                }
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage(`Error: ${error.message}`, 'assistant');
+            } finally {
+                document.getElementById('sendBtn').disabled = false;
+                selectedPdfFile = null;
+                document.getElementById('fileUploadBtn').classList.remove('has-file');
+                document.getElementById('fileUploadText').textContent = 'Upload PDF';
+                document.getElementById('pdf-upload').value = '';
+            }
+        }
+
+        function clearEditor() {
+            document.getElementById('latex-editor').value = '';
+            document.getElementById('pdf-viewer').style.display = 'none';
+            document.getElementById('placeholder').style.display = 'block';
+            document.getElementById('downloadBtn').style.display = 'none';
+            setStatus('Ready', '');
+            currentPdfUrl = null;
+        }
+
+        async function compilePDF() {
+            const latexCode = document.getElementById('latex-editor').value;
+            
+            if (!latexCode.trim()) {
+                showToast('No LaTeX code to compile', 'error');
+                return;
+            }
+
+            setStatus('Compiling...', 'loading');
+            document.getElementById('loader').classList.add('active');
+
+            try {
+                const response = await fetch('/compile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latex_code: latexCode }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentPdfUrl = data.pdf_url;
+                    const viewer = document.getElementById('pdf-viewer');
+                    viewer.src = data.pdf_url;
+                    viewer.style.display = 'block';
+                    document.getElementById('placeholder').style.display = 'none';
+                    document.getElementById('downloadBtn').style.display = 'inline-flex';
+                    setStatus('PDF ready', 'success');
+                } else {
+                    setStatus('Compilation failed', 'error');
+                    showToast(data.error, 'error');
+                }
+            } catch (error) {
+                setStatus('Error', 'error');
+                showToast('Failed to compile: ' + error.message, 'error');
+            } finally {
+                document.getElementById('loader').classList.remove('active');
+            }
+        }
+
+        function downloadPDF() {
+            if (currentPdfUrl) {
+                const link = document.createElement('a');
+                link.href = currentPdfUrl;
+                link.download = 'resume.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        function setStatus(text, state) {
+            document.getElementById('statusText').textContent = text;
+            const dot = document.getElementById('statusDot');
+            dot.className = 'status-dot';
+            if (state) dot.classList.add(state);
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            toast.className = 'toast ' + type;
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Ctrl/Cmd + Enter to compile
+        document.getElementById('latex-editor').addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                compilePDF();
+            }
+        });
+    </script>
+</body>
+</html>

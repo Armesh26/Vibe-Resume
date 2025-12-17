@@ -18,14 +18,18 @@ function AppContent() {
   } = useSession();
   
   const [showEditor, setShowEditor] = useState(true);
-  const [pdfUrl, setPdfUrl] = useState(null);
   const [isCompiling, setIsCompiling] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [targetLine, setTargetLine] = useState(null);
   const abortControllerRef = useRef(null);
+  
+  // Get pdfUrl from current session
+  const pdfUrl = currentSession?.pdfUrl || null;
   
   // Panel sizes as percentages
   const [editorWidth, setEditorWidth] = useState(30);
   const [chatWidth, setChatWidth] = useState(25);
+  const [isResizing, setIsResizing] = useState(false);
   const isDragging = useRef(null);
   const containerRef = useRef(null);
 
@@ -49,9 +53,12 @@ function AppContent() {
     };
 
     const handleMouseUp = () => {
-      isDragging.current = null;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+      if (isDragging.current) {
+        isDragging.current = null;
+        setIsResizing(false);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -66,6 +73,7 @@ function AppContent() {
   const startEditorResize = useCallback((e) => {
     e.preventDefault();
     isDragging.current = 'editor';
+    setIsResizing(true);
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   }, []);
@@ -73,12 +81,15 @@ function AppContent() {
   const startChatResize = useCallback((e) => {
     e.preventDefault();
     isDragging.current = 'chat';
+    setIsResizing(true);
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   }, []);
 
-  const compilePdf = useCallback(async () => {
-    const latex = currentSession?.latex;
+  const compilePdf = useCallback(async (latexCode) => {
+    // Use provided latex or fall back to current session latex
+    // Check if latexCode is a string (not an event object from button click)
+    const latex = (typeof latexCode === 'string') ? latexCode : currentSession?.latex;
     if (!latex?.trim()) return;
 
     setIsCompiling(true);
@@ -92,7 +103,7 @@ function AppContent() {
       const data = await response.json();
       if (data.success && data.pdf_url) {
         // Use the URL returned by the backend with cache-busting timestamp
-        setPdfUrl(`${data.pdf_url}?t=${Date.now()}`);
+        updateCurrentSession({ pdfUrl: `${data.pdf_url}?t=${Date.now()}` });
       } else {
         showToast(data.error || 'Compilation failed', 'error');
       }
@@ -101,7 +112,7 @@ function AppContent() {
     } finally {
       setIsCompiling(false);
     }
-  }, [currentSession?.latex]);
+  }, [currentSession?.latex, updateCurrentSession]);
 
   const handleSendMessage = useCallback(async (message, file) => {
     const requestSessionId = currentSessionId;
@@ -199,8 +210,8 @@ function AppContent() {
           checkpoints: newCheckpoints
         });
 
-        // Auto-compile
-        setTimeout(() => compilePdf(), 100);
+        // Auto-compile with the new latex code directly
+        compilePdf(data.latex_code);
       } else {
         updateCurrentSession({
           messages: [...previousMessages, userMsg, {
@@ -238,7 +249,7 @@ function AppContent() {
   const handleRestore = useCallback((checkpoint) => {
     updateCurrentSession({ latex: checkpoint.latex });
     showToast('Restored to checkpoint', 'success');
-    setTimeout(() => compilePdf(), 100);
+    compilePdf(checkpoint.latex);
   }, [updateCurrentSession, compilePdf]);
 
   const handleDownload = useCallback(() => {
@@ -249,6 +260,14 @@ function AppContent() {
       link.click();
     }
   }, [pdfUrl]);
+
+  const handleGoToSource = useCallback((line) => {
+    // Ensure editor is visible
+    if (!showEditor) {
+      setShowEditor(true);
+    }
+    setTargetLine(line);
+  }, [showEditor]);
 
   return (
     <div className="app">
@@ -262,7 +281,7 @@ function AppContent() {
       <div className="main-content">
         <Sidebar />
 
-        <div className="panels" ref={containerRef}>
+        <div className={`panels ${isResizing ? 'is-resizing' : ''}`} ref={containerRef}>
           {showEditor && (
             <>
               <div 
@@ -270,8 +289,11 @@ function AppContent() {
                 style={{ width: `${editorWidth}%` }}
               >
                 <LatexEditor 
+                  key={currentSessionId}
                   onCompile={compilePdf}
                   isCompiling={isCompiling}
+                  targetLine={targetLine}
+                  onLineNavigated={() => setTargetLine(null)}
                 />
               </div>
               <div 
@@ -286,8 +308,10 @@ function AppContent() {
             style={{ flex: 1 }}
           >
             <PdfViewer 
+              key={currentSessionId}
               pdfUrl={pdfUrl}
               onDownload={handleDownload}
+              onGoToSource={handleGoToSource}
             />
           </div>
 
@@ -301,9 +325,9 @@ function AppContent() {
             style={{ width: `${chatWidth}%` }}
           >
             <ChatPanel 
+              key={currentSessionId}
               onSendMessage={handleSendMessage}
               onRestore={handleRestore}
-              isLoading={isLoading}
               onStop={handleStop}
             />
           </div>

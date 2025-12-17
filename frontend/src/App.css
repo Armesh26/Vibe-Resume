@@ -18,6 +18,7 @@
   display: flex;
   overflow: hidden;
   position: relative;
+  min-height: 0;
 }
 
 .panel {
@@ -25,20 +26,24 @@
   flex-direction: column;
   overflow: hidden;
   height: 100%;
+  min-height: 0;
 }
 
 .editor-wrapper {
   min-width: 200px;
   flex-shrink: 0;
+  min-height: 0;
 }
 
 .preview-wrapper {
   min-width: 200px;
+  min-height: 0;
 }
 
 .chat-wrapper {
   min-width: 250px;
   flex-shrink: 0;
+  min-height: 0;
 }
 
 /* Resize handles */
@@ -58,6 +63,14 @@
 
 .resize-handle:active {
   background: var(--accent);
+}
+
+/* Disable pointer events on iframes during resize to prevent them from capturing mouse events */
+.panels.is-resizing iframe,
+.panels.is-resizing canvas,
+.panels.is-resizing embed,
+.panels.is-resizing object {
+  pointer-events: none;
 }
 
 /* Toast notifications */

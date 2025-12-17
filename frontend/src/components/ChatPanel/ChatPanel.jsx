@@ -12,8 +12,8 @@ import {
 } from 'lucide-react';
 import './ChatPanel.css';
 
-export default function ChatPanel({ onSendMessage, onRestore, isLoading, onStop }) {
-  const { currentSession, updateCurrentSession, isPending } = useSession();
+export default function ChatPanel({ onSendMessage, onRestore, onStop }) {
+  const { currentSession, currentSessionId, updateCurrentSession, isPending } = useSession();
   const [input, setInput] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const messagesEndRef = useRef(null);
@@ -21,6 +21,7 @@ export default function ChatPanel({ onSendMessage, onRestore, isLoading, onStop 
   const textareaRef = useRef(null);
 
   const messages = currentSession?.messages || [];
+  const isLoading = isPending(currentSessionId);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

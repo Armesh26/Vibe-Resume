@@ -1,8 +1,31 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 
 const SessionContext = createContext(null);
 
 const MAX_SESSIONS = 5;
+
+// Deep clone a session to prevent shared references
+function cloneSession(session) {
+  if (!session) return null;
+  return {
+    ...session,
+    messages: session.messages ? [...session.messages.map(m => ({ ...m }))] : [],
+    checkpoints: session.checkpoints ? [...session.checkpoints.map(c => ({ ...c }))] : [],
+  };
+}
+
+// Create a fresh new session
+function createEmptySession(name = 'Chat 1') {
+  return {
+    id: 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+    name,
+    createdAt: Date.now(),
+    messages: [],
+    latex: '',
+    checkpoints: [],
+    pdfUrl: null
+  };
+}
 
 export function SessionProvider({ children }) {
   const [sessions, setSessions] = useState([]);
@@ -15,23 +38,24 @@ export function SessionProvider({ children }) {
     if (savedSessions) {
       try {
         const parsed = JSON.parse(savedSessions);
-        // Filter out duplicates and invalid entries
-        const uniqueSessions = parsed.filter((session, index, self) =>
-          session && session.id && 
-          index === self.findIndex(s => s.id === session.id)
-        );
+        // Deep clone all sessions to prevent shared references
+        const clonedSessions = parsed
+          .filter(s => s && s.id)
+          .map(s => cloneSession(s))
+          .filter((session, index, self) =>
+            index === self.findIndex(s => s.id === session.id)
+          );
         
-        if (uniqueSessions.length > 0) {
-          setSessions(uniqueSessions);
+        if (clonedSessions.length > 0) {
+          setSessions(clonedSessions);
           const lastActiveId = localStorage.getItem('vibe-resume-active-session');
-          const sessionToLoad = uniqueSessions.find(s => s.id === lastActiveId) || uniqueSessions[0];
+          const sessionToLoad = clonedSessions.find(s => s.id === lastActiveId) || clonedSessions[0];
           setCurrentSessionId(sessionToLoad.id);
-          // Save cleaned sessions
-          localStorage.setItem('vibe-resume-sessions', JSON.stringify(uniqueSessions));
         } else {
           initNewSession();
         }
       } catch (e) {
+        console.error('Failed to load sessions:', e);
         initNewSession();
       }
     } else {
@@ -39,14 +63,7 @@ export function SessionProvider({ children }) {
     }
     
     function initNewSession() {
-      const newSession = {
-        id: 'session-' + Date.now(),
-        name: 'Chat 1',
-        createdAt: Date.now(),
-        messages: [],
-        latex: '',
-        checkpoints: []
-      };
+      const newSession = createEmptySession('Chat 1');
       setSessions([newSession]);
       setCurrentSessionId(newSession.id);
     }
@@ -66,7 +83,8 @@ export function SessionProvider({ children }) {
     }
   }, [currentSessionId]);
 
-  const getCurrentSession = useCallback(() => {
+  // Get current session - memoized to prevent unnecessary recalculations
+  const currentSession = useMemo(() => {
     return sessions.find(s => s.id === currentSessionId) || null;
   }, [sessions, currentSessionId]);
 
@@ -83,14 +101,7 @@ export function SessionProvider({ children }) {
     let nextNum = 1;
     while (existingNumbers.includes(nextNum)) nextNum++;
 
-    const newSession = {
-      id: 'session-' + Date.now(),
-      name: `Chat ${nextNum}`,
-      createdAt: Date.now(),
-      messages: [],
-      latex: '',
-      checkpoints: []
-    };
+    const newSession = createEmptySession(`Chat ${nextNum}`);
 
     setSessions(prev => [...prev, newSession]);
     setCurrentSessionId(newSession.id);
@@ -98,16 +109,44 @@ export function SessionProvider({ children }) {
   }, [sessions]);
 
   const switchSession = useCallback((sessionId) => {
-    const session = sessions.find(s => s.id === sessionId);
-    if (session) {
-      setCurrentSessionId(sessionId);
+    if (sessionId !== currentSessionId) {
+      const session = sessions.find(s => s.id === sessionId);
+      if (session) {
+        setCurrentSessionId(sessionId);
+      }
     }
-  }, [sessions]);
+  }, [sessions, currentSessionId]);
 
   const updateCurrentSession = useCallback((updates) => {
-    setSessions(prev => prev.map(s => 
-      s.id === currentSessionId ? { ...s, ...updates } : s
-    ));
+    if (!currentSessionId) return;
+    
+    setSessions(prev => prev.map(s => {
+      if (s.id !== currentSessionId) return s;
+      
+      // Create a new session object with updated values
+      const updated = { ...s };
+      
+      // Handle messages array - always create new array
+      if (updates.messages !== undefined) {
+        updated.messages = [...updates.messages.map(m => ({ ...m }))];
+      }
+      
+      // Handle checkpoints array - always create new array  
+      if (updates.checkpoints !== undefined) {
+        updated.checkpoints = [...updates.checkpoints.map(c => ({ ...c }))];
+      }
+      
+      // Handle other properties
+      if (updates.latex !== undefined) {
+        updated.latex = updates.latex;
+      }
+      
+      if (updates.pdfUrl !== undefined) {
+        updated.pdfUrl = updates.pdfUrl;
+      }
+      
+      return updated;
+    }));
   }, [currentSessionId]);
 
   const deleteSession = useCallback((sessionId) => {
@@ -141,7 +180,7 @@ export function SessionProvider({ children }) {
   const value = {
     sessions,
     currentSessionId,
-    currentSession: getCurrentSession(),
+    currentSession,
     pendingRequests,
     maxSessions: MAX_SESSIONS,
     createNewSession,
@@ -166,4 +205,3 @@ export function useSession() {
   }
   return context;
 }
-

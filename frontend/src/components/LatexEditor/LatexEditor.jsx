@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { StreamLanguage } from '@codemirror/language';
 import { stex } from '@codemirror/legacy-modes/mode/stex';
@@ -7,8 +7,9 @@ import { useSession } from '../../context/SessionContext';
 import { Code, Play, Trash2 } from 'lucide-react';
 import './LatexEditor.css';
 
-export default function LatexEditor({ onCompile, isCompiling }) {
+export default function LatexEditor({ onCompile, isCompiling, targetLine, onLineNavigated }) {
   const { currentSession, updateCurrentSession } = useSession();
+  const editorRef = useRef(null);
   
   const latex = currentSession?.latex || '';
 
@@ -19,6 +20,29 @@ export default function LatexEditor({ onCompile, isCompiling }) {
   const handleClear = () => {
     updateCurrentSession({ latex: '' });
   };
+
+  // Handle navigation to target line from PDF synctex
+  useEffect(() => {
+    if (targetLine !== null && editorRef.current?.view) {
+      const view = editorRef.current.view;
+      const doc = view.state.doc;
+      
+      // Ensure line is within bounds
+      const lineNum = Math.min(Math.max(1, targetLine + 1), doc.lines);
+      const line = doc.line(lineNum);
+      
+      // Scroll to line and select it
+      view.dispatch({
+        selection: { anchor: line.from, head: line.to },
+        scrollIntoView: true
+      });
+      
+      // Notify parent that navigation is complete
+      if (onLineNavigated) {
+        onLineNavigated();
+      }
+    }
+  }, [targetLine, onLineNavigated]);
 
   return (
     <div className="latex-editor">
@@ -31,6 +55,7 @@ export default function LatexEditor({ onCompile, isCompiling }) {
 
       <div className="editor-content">
         <CodeMirror
+          ref={editorRef}
           value={latex}
           height="100%"
           theme={oneDark}

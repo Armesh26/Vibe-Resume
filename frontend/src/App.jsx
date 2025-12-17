@@ -282,26 +282,22 @@ function AppContent() {
         <Sidebar />
 
         <div className={`panels ${isResizing ? 'is-resizing' : ''}`} ref={containerRef}>
-          {showEditor && (
-            <>
-              <div 
-                className="panel editor-wrapper"
-                style={{ width: `${editorWidth}%` }}
-              >
-                <LatexEditor 
-                  key={currentSessionId}
-                  onCompile={compilePdf}
-                  isCompiling={isCompiling}
-                  targetLine={targetLine}
-                  onLineNavigated={() => setTargetLine(null)}
-                />
-              </div>
-              <div 
-                className="resize-handle"
-                onMouseDown={startEditorResize}
-              />
-            </>
-          )}
+          <div 
+            className={`panel editor-wrapper ${showEditor ? '' : 'hidden'}`}
+            style={{ width: showEditor ? `${editorWidth}%` : '0%' }}
+          >
+            <LatexEditor 
+              key={currentSessionId}
+              onCompile={compilePdf}
+              isCompiling={isCompiling}
+              targetLine={targetLine}
+              onLineNavigated={() => setTargetLine(null)}
+            />
+          </div>
+          <div 
+            className={`resize-handle ${showEditor ? '' : 'hidden'}`}
+            onMouseDown={startEditorResize}
+          />
 
           <div 
             className="panel preview-wrapper"

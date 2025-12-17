@@ -27,25 +27,38 @@ model = genai.GenerativeModel('gemini-3-pro-preview')
 TEMP_DIR = os.path.normpath(os.path.join(tempfile.gettempdir(), 'latex_resumes'))
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-# Chat history file
-CHAT_HISTORY_FILE = os.path.join(os.path.dirname(__file__), 'chat_history.json')
+# Chat history directory - store each chat by ID
+CHAT_HISTORY_DIR = os.path.join(os.path.dirname(__file__), 'chat_histories')
+os.makedirs(CHAT_HISTORY_DIR, exist_ok=True)
 
 
-def load_chat_history():
+def get_chat_file_path(chat_id: str) -> str:
+    """Get the file path for a specific chat ID."""
+    # Sanitize chat_id to prevent directory traversal
+    safe_id = re.sub(r'[^a-zA-Z0-9_-]', '', chat_id)
+    return os.path.join(CHAT_HISTORY_DIR, f'{safe_id}.json')
+
+
+def load_chat_history(chat_id: str = None):
     """Load chat history from file."""
     try:
-        if os.path.exists(CHAT_HISTORY_FILE):
-            with open(CHAT_HISTORY_FILE, 'r') as f:
-                return json.load(f)
+        if chat_id:
+            file_path = get_chat_file_path(chat_id)
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as f:
+                    return json.load(f)
     except Exception:
         pass
     return {'messages': [], 'latex': '', 'checkpoints': []}
 
 
-def save_chat_history(data):
+def save_chat_history(data, chat_id: str = None):
     """Save chat history to file."""
+    if not chat_id:
+        return  # Don't save without a chat ID
     try:
-        with open(CHAT_HISTORY_FILE, 'w') as f:
+        file_path = get_chat_file_path(chat_id)
+        with open(file_path, 'w') as f:
             json.dump(data, f, indent=2)
     except Exception as e:
         print(f"Error saving chat history: {e}")
@@ -699,23 +712,30 @@ def chat():
 
 @app.route('/history', methods=['GET'])
 def get_history():
-    """Get chat history."""
-    history = load_chat_history()
+    """Get chat history for a specific session."""
+    session_id = request.args.get('sessionId')
+    history = load_chat_history(session_id)
     return jsonify(history)
 
 
 @app.route('/history', methods=['POST'])
 def update_history():
-    """Update chat history."""
+    """Update chat history for a specific session."""
     data = request.json
-    save_chat_history(data)
+    session_id = data.get('sessionId')
+    if session_id:
+        # Remove sessionId from data before saving
+        history_data = {k: v for k, v in data.items() if k != 'sessionId'}
+        save_chat_history(history_data, session_id)
     return jsonify({'success': True})
 
 
 @app.route('/history/clear', methods=['POST'])
 def clear_history():
-    """Clear chat history."""
-    save_chat_history({'messages': [], 'latex': '', 'checkpoints': []})
+    """Clear chat history for a specific session."""
+    data = request.json or {}
+    session_id = data.get('sessionId')
+    save_chat_history({'messages': [], 'latex': '', 'checkpoints': []}, session_id)
     return jsonify({'success': True})
 
 

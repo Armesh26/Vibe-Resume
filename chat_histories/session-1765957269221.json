@@ -1,0 +1,39 @@
+{
+  "messages": [
+    {
+      "type": "user",
+      "content": "hey",
+      "attachment": null,
+      "timestamp": 1765957280955
+    },
+    {
+      "type": "assistant",
+      "content": "I'm a resume builder assistant. I can help you create, modify, or improve resumes. Please provide resume-related information or upload a resume PDF.",
+      "timestamp": 1765957285818
+    },
+    {
+      "type": "user",
+      "content": "make a resume for Peter parker",
+      "attachment": null,
+      "timestamp": 1765957311420
+    },
+    {
+      "type": "assistant",
+      "content": "\u2713 Generating PDF...",
+      "timestamp": 1765957349713
+    },
+    {
+      "type": "user",
+      "content": "hey",
+      "attachment": null,
+      "timestamp": 1765957456437
+    },
+    {
+      "type": "assistant",
+      "content": "I'm a resume builder assistant. I can help you create, modify, or improve resumes. Please provide resume-related information or upload a resume PDF.",
+      "timestamp": 1765957460974
+    }
+  ],
+  "latex": "\\documentclass[10pt,a4paper]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\usepackage{geometry}\n\\usepackage{enumitem}\n\\usepackage{titlesec}\n\\usepackage{hyperref}\n\\usepackage{xcolor}\n\n\\geometry{margin=0.5in}\n\\pagestyle{empty}\n\\setlist[itemize]{nosep, leftmargin=1.2em, topsep=2pt}\n\n\\definecolor{accent}{RGB}{44, 62, 80}\n\\definecolor{darkblue}{RGB}{0, 51, 102}\n\\definecolor{lightgray}{RGB}{100, 100, 100}\n\n\\titleformat{\\section}{\\large\\bfseries\\color{accent}\\uppercase}{}{0em}{}[\\titlerule]\n\\titlespacing*{\\section}{0pt}{8pt}{4pt}\n\\hypersetup{colorlinks=true, urlcolor=darkblue, linkcolor=darkblue, pdfnewwindow=true}\n\n\\begin{document}\n\n\\begin{center}\n{\\LARGE \\textbf{PETER PARKER}}\\\\[0.3em]\n{\\color{lightgray} (555) 019-2002 $|$ peter.parker@esu.edu $|$ Queens, New York}\n\\end{center}\n\n\\section{Education}\n\\textbf{Empire State University} \\hfill {\\color{lightgray}2019 -- 2023}\\\\\nBachelor of Science in Biophysics $|$ GPA: 4.0/4.0\\\\\n\\textit{Awards: Fisk Tower Science Scholarship, Octavius Industries Grant Recipient}\n\n\\section{Technical Skills}\n\\textbf{Laboratory:} Polymer Synthesis, Electron Microscopy, Fluid Dynamics, Spectrophotometry, CRISPR-Cas9\\\\\n\\textbf{Programming:} Python (NumPy, Pandas), MATLAB, C++, LaTeX\\\\\n\\textbf{Software:} Adobe Creative Cloud (Photoshop, Lightroom), SolidWorks, AutoCAD\\\\\n\\textbf{Equipment:} High-Speed DSLR Photography, Centrifuges, Oscilloscopes\n\n\\section{Experience}\n\\textbf{Research Intern} $|$ {\\color{accent}\\textbf{Stark Industries}} \\hfill {\\color{lightgray}May 2022 -- Aug 2022}\n\\begin{itemize}\n\\item Assisted in the R\\&D of advanced nano-materials for protective equipment application.\n\\item Developed a high-tensile synthetic polymer adhesive, improving tensile strength by 300\\% compared to market standards.\n\\item Analyzed sensor data using Python to optimize energy efficiency in mechanical prototypes.\n\\item Collaborated with cross-functional engineering teams to troubleshoot hardware malfunctions in real-time.\n\\end{itemize}\n\n\\textbf{Freelance Photographer} $|$ {\\color{accent}\\textbf{The Daily Bugle}} \\hfill {\\color{lightgray}Aug 2016 -- Present}\n\\begin{itemize}\n\\item Capture high-resolution action photography for front-page features under strict daily deadlines.\n\\item Utilize advanced shutter speed techniques and positioning to document breaking urban news events.\n\\item Negotiate licensing rights for exclusive imagery with editorial management.\n\\item Digitally edit and process RAW images using Adobe Lightroom for print publication.\n\\end{itemize}\n\n\\textbf{Lab Assistant} $|$ {\\color{accent}\\textbf{Connors Laboratory}} \\hfill {\\color{lightgray}Sep 2021 -- May 2022}\n\\begin{itemize}\n\\item Conducted cross-species genetic analysis to identify regenerative properties in reptilian DNA.\n\\item Maintained sterile laboratory environment and managed chemical inventory safety protocols.\n\\item Compiled research data into comprehensive reports for peer review.\n\\end{itemize}\n\n\\section{Projects}\n\\textbf{High-Tensile Fluid Compound} \\hfill {\\color{lightgray}2021}\\\\\nSynthesized a shear-thinning fluid capable of supporting extreme weight loads. Engineered a delivery mechanism for rapid deployment and adhesion, with a chemical half-life designed for environmental safety (biodegradable within 2 hours).\n\n\\textbf{Autonomous Urban Navigation Algorithm} \\hfill {\\color{lightgray}2022}\\\\\nDeveloped a computer vision algorithm in C++ to identify structural anchor points in dense urban environments, optimizing trajectory calculations for pendulum-based motion.\n\n\\section{Volunteering}\n\\textbf{Community Tutor} $|$ {\\color{accent}\\textbf{F.E.A.S.T. Center}} \\hfill {\\color{lightgray}2018 -- Present}\n\\begin{itemize}\n\\item Provide free tutoring in Mathematics and Physics to underprivileged high school students in Queens.\n\\item Organize community safety workshops and neighborhood cleanup initiatives.\n\\end{itemize}\n\n\\end{document}",
+  "checkpoints": []
+}

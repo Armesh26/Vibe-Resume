@@ -1,0 +1,11 @@
+{
+  "messages": [
+    {
+      "type": "assistant",
+      "content": "I'm a resume builder assistant. I can help you create, modify, or improve resumes. Please provide resume-related information or upload a resume PDF.",
+      "timestamp": 1765957149025
+    }
+  ],
+  "latex": "",
+  "checkpoints": []
+}

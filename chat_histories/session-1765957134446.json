@@ -1,0 +1,28 @@
+{
+  "messages": [
+    {
+      "type": "user",
+      "content": "hey",
+      "attachment": null,
+      "timestamp": 1765957268100
+    },
+    {
+      "type": "assistant",
+      "content": "I'm a resume builder assistant. I can help you create, modify, or improve resumes. Please provide resume-related information or upload a resume PDF.",
+      "timestamp": 1765957273096
+    },
+    {
+      "type": "user",
+      "content": "make a resume for bruce wayne",
+      "attachment": null,
+      "timestamp": 1765957318523
+    },
+    {
+      "type": "assistant",
+      "content": "\u2713 Generating PDF...",
+      "timestamp": 1765957361712
+    }
+  ],
+  "latex": "\\documentclass[10pt,a4paper]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\usepackage{geometry}\n\\usepackage{enumitem}\n\\usepackage{titlesec}\n\\usepackage{hyperref}\n\\usepackage{xcolor}\n\n\\geometry{margin=0.5in}\n\\pagestyle{empty}\n\\setlist[itemize]{nosep, leftmargin=1.2em, topsep=2pt}\n\n% Define colors BEFORE using them\n\\definecolor{accent}{RGB}{44, 62, 80}\n\\definecolor{darkblue}{RGB}{0, 51, 102}\n\\definecolor{lightgray}{RGB}{100, 100, 100}\n\n\\titleformat{\\section}{\\large\\bfseries\\color{accent}\\uppercase}{}{0em}{}[\\titlerule]\n\\titlespacing*{\\section}{0pt}{8pt}{4pt}\n\\hypersetup{colorlinks=true, urlcolor=darkblue, linkcolor=darkblue, pdfnewwindow=true}\n\n\\begin{document}\n\n\\begin{center}\n{\\LARGE \\textbf{BRUCE WAYNE}}\\\\[0.3em]\n{\\color{lightgray} 555-0199 $|$ b.wayne@wayneenterprises.com $|$ Gotham City, NJ}\n\\end{center}\n\n\\section{Executive Profile}\nVisionary industrialist and philanthropist with a proven track record of leading a Fortune 500 conglomerate. Dedicated to technological innovation, urban renewal, and social justice. Expert in strategic resource allocation, advanced R\\&D oversight, and high-stakes crisis management.\n\n\\section{Experience}\n\\textbf{CEO \\& Chairman} $|$ {\\color{accent}\\textbf{Wayne Enterprises}} \\hfill {\\color{lightgray}2010 -- Present}\n\\begin{itemize}\n\\item Oversee operations of a multinational conglomerate with diverse holdings in defense, shipping, aerospace, and biotechnology.\n\\item Spearheaded the \"Applied Sciences\" division, developing proprietary prototypes for tactical, defensive, and transportation applications.\n\\item Increased annual revenue by 150\\% through strategic acquisitions and the development of the Wayne Energy clean fusion project.\n\\item Managed complex crisis scenarios involving hostile takeovers, market volatility, and large-scale infrastructure threats in Gotham City.\n\\end{itemize}\n\n\\textbf{Founder \\& Chairman} $|$ {\\color{accent}\\textbf{The Wayne Foundation}} \\hfill {\\color{lightgray}2008 -- Present}\n\\begin{itemize}\n\\item Direct one of the world's largest private foundations, focusing on crime reduction, victim support, and poverty alleviation.\n\\item Established a network of orphanages and educational grants to support at-risk youth in urban environments.\n\\item Funded the reconstruction of the Gotham transit system to improve economic mobility for underserved communities.\n\\end{itemize}\n\n\\textbf{Independent Security Consultant} $|$ {\\color{accent}\\textbf{Private Sector}} \\hfill {\\color{lightgray}2005 -- 2010}\n\\begin{itemize}\n\\item Conducted extensive field research in criminal psychology, forensic science, and tactical operations across Europe and Asia.\n\\item Developed specialized skills in non-linear problem solving, risk assessment, and stealth surveillance methodologies.\n\\item Mastered multiple disciplines including chemistry, engineering, and advanced combat techniques under various global mentors.\n\\end{itemize}\n\n\\section{Education}\n\\textbf{Princeton University} \\hfill {\\color{lightgray}2000 -- 2004}\\\\\nBachelor of Science in Criminology \\& Chemistry (Summa Cum Laude)\n\n\\textbf{Yale Law School} \\hfill {\\color{lightgray}2004 -- 2005}\\\\\nJuris Doctor Candidate (Specialized in Criminal Law and Justice Systems)\n\n\\section{Skills}\n\\textbf{Leadership:} Corporate Strategy, Mergers \\& Acquisitions, Crisis Negotiation, Public Relations, Wealth Management\\\\\n\\textbf{Technical:} Advanced Engineering, Forensic Science, Computer Systems, Ballistics, Cryptography, Chemistry\\\\\n\\textbf{Languages:} English, French, Spanish, Mandarin, Japanese, Russian, Arabic\\\\\n\\textbf{Physical:} Master Martial Artist, Tactical Driving, Acrobatics, Escapology, Stealth Tactics\n\n\\section{Key Projects}\n\\textbf{Clean Energy Initiative:} Developed a sustainable fusion reactor prototype capable of powering Gotham City.\\\\\n\\textbf{Urban Renewal:} Led the \"Gotham Reborn\" initiative to modernize city infrastructure and reduce crime rates through environmental design.\\\\\n\\textbf{Tactical R\\&D:} Oversaw the design and fabrication of specialized all-terrain vehicles and composite body armor systems.\n\n\\end{document}",
+  "checkpoints": []
+}

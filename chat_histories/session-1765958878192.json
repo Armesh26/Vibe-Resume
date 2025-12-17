@@ -1,0 +1,17 @@
+{
+  "messages": [
+    {
+      "type": "user",
+      "content": "make resume for Anushka suresh , she does translation to Malayalam for talkster.io , she studied at st Joseph blr for 3 yrs till , 2025 doing bcc in zoology biochemistry now she's doing food nutrition and dietetics at Ramaiah in blr",
+      "attachment": null,
+      "timestamp": 1765959018092
+    },
+    {
+      "type": "assistant",
+      "content": "\u2713 Generating PDF...",
+      "timestamp": 1765959055277
+    }
+  ],
+  "latex": "\\documentclass[10pt,a4paper]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\usepackage{geometry}\n\\usepackage{enumitem}\n\\usepackage{titlesec}\n\\usepackage{hyperref}\n\\usepackage{xcolor}\n\n\\geometry{margin=0.5in}\n\\pagestyle{empty}\n\\setlist[itemize]{nosep, leftmargin=1.2em, topsep=2pt}\n\n% Define colors BEFORE using them\n\\definecolor{accent}{RGB}{44, 62, 80}\n\\definecolor{darkblue}{RGB}{0, 51, 102}\n\\definecolor{lightgray}{RGB}{100, 100, 100}\n\n\\titleformat{\\section}{\\large\\bfseries\\color{accent}\\uppercase}{}{0em}{}[\\titlerule]\n\\titlespacing*{\\section}{0pt}{8pt}{4pt}\n\\hypersetup{colorlinks=true, urlcolor=darkblue, linkcolor=darkblue, pdfnewwindow=true}\n\n\\begin{document}\n\n\\begin{center}\n{\\LARGE \\textbf{ANUSHKA SURESH}}\\\\[0.3em]\n{\\color{lightgray} +91 98765 43210 $|$ anushka.suresh@email.com $|$ Bangalore, India}\n\\end{center}\n\n\\section{Education}\n\\textbf{M.S. Ramaiah University of Applied Sciences} \\hfill {\\color{lightgray}2025 -- Present}\\\\\nM.Sc. in Food, Nutrition and Dietetics\n\n\\vspace{5pt}\n\n\\textbf{St. Joseph's University} \\hfill {\\color{lightgray}2022 -- 2025}\\\\\nB.Sc. in Zoology and Biochemistry\n\n\\section{Experience}\n\\textbf{Malayalam Translator} $|$ {\\color{accent}\\textbf{Talkster.io}} \\hfill {\\color{lightgray}2023 -- Present}\n\\begin{itemize}\n\\item Translate educational audio and text content from English to Malayalam for a global language learning platform.\n\\item Ensure linguistic accuracy, correct grammar, and cultural nuance in all translations to facilitate effective user learning.\n\\item Collaborate with content managers to verify terminology and maintain consistency across various learning modules.\n\\item Review and edit translated materials to meet high-quality standards and strict deadlines.\n\\end{itemize}\n\n\\section{Skills}\n\\textbf{Languages:} English (Professional), Malayalam (Native/Fluent) \\\\\n\\textbf{Scientific Domains:} Clinical Nutrition, Dietetics, Biochemistry, Zoology, Lab Safety \\\\\n\\textbf{Technical Skills:} Translation, Medical Terminology, Research Methodology, Microsoft Office Suite\n\n\\section{Academic Projects}\n\\textbf{Biochemical Analysis \\& Research} $|$ {\\color{accent}\\textbf{St. Joseph's University}} \\hfill {\\color{lightgray}2024}\n\\begin{itemize}\n\\item Conducted laboratory experiments focusing on biochemical pathways and documented results in detailed scientific reports.\n\\item Analyzed zoological specimens and physiological processes, applying theoretical concepts to practical laboratory settings.\n\\end{itemize}\n\n\\section{Certifications \\& Interests}\n\\textbf{Certifications:} Certificate in Food Safety, Workshop on Clinical Biochemistry \\\\\n\\textbf{Interests:} Public Health Nutrition, Language Studies, Scientific Writing\n\n\\end{document}",
+  "checkpoints": []
+}

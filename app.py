@@ -23,8 +23,8 @@ app = Flask(__name__)
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 model = genai.GenerativeModel('gemini-3-pro-preview')
 
-# Store generated PDFs temporarily
-TEMP_DIR = os.path.join(tempfile.gettempdir(), 'latex_resumes')
+# Store generated PDFs temporarily - normalize path to avoid double slashes
+TEMP_DIR = os.path.normpath(os.path.join(tempfile.gettempdir(), 'latex_resumes'))
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 # Chat history file
@@ -260,7 +260,7 @@ def compile_latex(latex_code: str) -> Tuple[bool, str, Optional[str]]:
         
         for _ in range(2):
             result = subprocess.run(
-                [pdflatex_path, '-interaction=nonstopmode', '-output-directory', job_dir, tex_file],
+                [pdflatex_path, '-synctex=1', '-interaction=nonstopmode', '-output-directory', job_dir, tex_file],
                 capture_output=True,
                 text=True,
                 timeout=60
@@ -717,6 +717,138 @@ def clear_history():
     """Clear chat history."""
     save_chat_history({'messages': [], 'latex': '', 'checkpoints': []})
     return jsonify({'success': True})
+
+
+def find_synctex() -> Optional[str]:
+    """Find synctex executable."""
+    if shutil.which('synctex'):
+        return 'synctex'
+    
+    common_paths = [
+        '/Library/TeX/texbin/synctex',
+        '/usr/local/texlive/2024/bin/universal-darwin/synctex',
+        '/usr/local/texlive/2025/bin/universal-darwin/synctex',
+        '/usr/bin/synctex',
+        '/usr/local/bin/synctex',
+    ]
+    
+    for path in common_paths:
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
+    
+    return None
+
+
+@app.route('/synctex/forward/<job_id>', methods=['POST'])
+def synctex_forward(job_id):
+    """Forward sync: line number -> PDF position."""
+    data = request.json
+    line = data.get('line', 1)
+    
+    job_dir = os.path.normpath(os.path.join(TEMP_DIR, job_id))
+    synctex_file = os.path.join(job_dir, 'resume.synctex.gz')
+    tex_file = os.path.normpath(os.path.join(job_dir, 'resume.tex'))
+    pdf_file = os.path.normpath(os.path.join(job_dir, 'resume.pdf'))
+    
+    synctex_path = find_synctex()
+    if not synctex_path:
+        return jsonify({'success': False, 'error': 'SyncTeX not found'})
+    
+    if not os.path.exists(synctex_file):
+        return jsonify({'success': False, 'error': 'SyncTeX file not found'})
+    
+    try:
+        # Use synctex command-line tool with normalized paths
+        result = subprocess.run(
+            [synctex_path, 'view', '-i', f'{line}:0:{tex_file}', '-o', pdf_file],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        # Parse output to get page, x, y, w, h (take first result)
+        output = result.stdout
+        page = 1
+        x, y, w, h = 0, 0, 0, 0
+        found_result = False
+        
+        for line_out in output.split('\n'):
+            line_out = line_out.strip()
+            if line_out.startswith('Page:'):
+                if not found_result:  # Take first result only
+                    page = int(line_out.split(':')[1].strip())
+                    found_result = True
+            elif line_out.startswith('x:') and found_result:
+                x = float(line_out.split(':')[1].strip())
+            elif line_out.startswith('y:') and found_result:
+                y = float(line_out.split(':')[1].strip())
+            elif line_out.startswith('W:') and found_result:
+                w = float(line_out.split(':')[1].strip())
+            elif line_out.startswith('H:') and found_result:
+                h = float(line_out.split(':')[1].strip())
+                break  # Got all values for first result
+        
+        if not found_result:
+            return jsonify({'success': False, 'error': 'No sync result found'})
+        
+        return jsonify({
+            'success': True,
+            'page': page,
+            'x': x,
+            'y': y,
+            'width': w,
+            'height': h
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/synctex/reverse/<job_id>', methods=['POST'])
+def synctex_reverse(job_id):
+    """Reverse sync: PDF position -> line number."""
+    data = request.json
+    page = data.get('page', 1)
+    x = data.get('x', 0)
+    y = data.get('y', 0)
+    
+    job_dir = os.path.normpath(os.path.join(TEMP_DIR, job_id))
+    pdf_file = os.path.normpath(os.path.join(job_dir, 'resume.pdf'))
+    
+    synctex_path = find_synctex()
+    if not synctex_path:
+        return jsonify({'success': False, 'error': 'SyncTeX not found'})
+    
+    if not os.path.exists(pdf_file):
+        return jsonify({'success': False, 'error': 'PDF file not found'})
+    
+    try:
+        # Use synctex command-line tool
+        result = subprocess.run(
+            [synctex_path, 'edit', '-o', f'{page}:{x}:{y}:{pdf_file}'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        # Parse output to get line number
+        output = result.stdout
+        line = 0
+        
+        for line_out in output.split('\n'):
+            line_out = line_out.strip()
+            if line_out.startswith('Line:'):
+                line = int(line_out.split(':')[1].strip())
+                break
+        
+        if line == 0:
+            return jsonify({'success': False, 'error': 'No line found'})
+        
+        return jsonify({
+            'success': True,
+            'line': line
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { SessionProvider, useSession } from './context/SessionContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Header from './components/Header/Header';
 import Sidebar from './components/Sidebar/Sidebar';
 import LatexEditor from './components/LatexEditor/LatexEditor';
@@ -21,7 +22,17 @@ function AppContent() {
   const [isCompiling, setIsCompiling] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [targetLine, setTargetLine] = useState(null);
+  const [proMode, setProMode] = useState(() => {
+    return localStorage.getItem('vibe-resume-pro-mode') === 'true';
+  });
   const abortControllerRef = useRef(null);
+
+  const toggleProMode = () => {
+    setProMode(prev => {
+      localStorage.setItem('vibe-resume-pro-mode', !prev);
+      return !prev;
+    });
+  };
   
   // Get pdfUrl from current session
   const pdfUrl = currentSession?.pdfUrl || null;
@@ -141,6 +152,7 @@ function AppContent() {
       const formData = new FormData();
       formData.append('message', message);
       formData.append('current_latex', currentLatex);
+      formData.append('pro_mode', proMode ? 'true' : 'false');
       if (file) {
         formData.append('pdf', file);
       }
@@ -236,7 +248,7 @@ function AppContent() {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [currentSession, currentSessionId, updateCurrentSession, setPending, sessions, compilePdf]);
+  }, [currentSession, currentSessionId, updateCurrentSession, setPending, sessions, compilePdf, proMode]);
 
   const handleStop = useCallback(() => {
     if (abortControllerRef.current) {
@@ -247,6 +259,10 @@ function AppContent() {
   }, [currentSessionId, setPending]);
 
   const handleRestore = useCallback((checkpoint) => {
+    if (!checkpoint?.latex?.trim()) {
+      showToast('Cannot restore: checkpoint data is missing', 'error');
+      return;
+    }
     updateCurrentSession({ latex: checkpoint.latex });
     showToast('Restored to checkpoint', 'success');
     compilePdf(checkpoint.latex);
@@ -276,6 +292,8 @@ function AppContent() {
         onToggleEditor={() => setShowEditor(!showEditor)}
         onDownload={handleDownload}
         canDownload={!!pdfUrl}
+        proMode={proMode}
+        onToggleProMode={toggleProMode}
       />
 
       <div className="main-content">
@@ -344,8 +362,10 @@ function showToast(message, type = 'info') {
 
 export default function App() {
   return (
-    <SessionProvider>
-      <AppContent />
-    </SessionProvider>
+    <ThemeProvider>
+      <SessionProvider>
+        <AppContent />
+      </SessionProvider>
+    </ThemeProvider>
   );
 }

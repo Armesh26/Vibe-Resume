@@ -17,11 +17,17 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('vibe-resume-sidebar-collapsed') === 'true';
   });
+  const [animationKey, setAnimationKey] = useState(0);
 
   const toggleCollapse = () => {
     setIsCollapsed(prev => {
-      localStorage.setItem('vibe-resume-sidebar-collapsed', !prev);
-      return !prev;
+      const newCollapsed = !prev;
+      localStorage.setItem('vibe-resume-sidebar-collapsed', newCollapsed);
+      // Trigger re-animation when opening
+      if (!newCollapsed) {
+        setAnimationKey(k => k + 1);
+      }
+      return newCollapsed;
     });
   };
 
@@ -38,21 +44,22 @@ export default function Sidebar() {
   };
 
   return (
-    <>
-      <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <div 
+      className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}
+      style={{ width: isCollapsed ? '0' : '260px' }}
+    >
+      <div className="sidebar-content" key={animationKey}>
         <div className="sidebar-header">
           <h2>CHATS</h2>
-          <button className="collapse-btn" onClick={toggleCollapse}>
-            <ChevronLeft size={18} />
-          </button>
         </div>
 
         <div className="sessions-list">
-          {sessions.map(session => (
+          {sessions.map((session, index) => (
             <div
               key={session.id}
               className={`session-item ${session.id === currentSessionId ? 'active' : ''}`}
               onClick={() => switchSession(session.id)}
+              style={{ animationDelay: `${0.05 + index * 0.05}s` }}
             >
               <MessageSquare size={16} />
               <span className="session-name">{session.name}</span>
@@ -81,12 +88,13 @@ export default function Sidebar() {
       </div>
 
       <button 
-        className={`expand-btn ${isCollapsed ? 'visible' : ''}`}
+        className={`toggle-btn ${isCollapsed ? 'collapsed' : ''}`}
         onClick={toggleCollapse}
+        title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        <ChevronRight size={18} />
+        {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </button>
-    </>
+    </div>
   );
 }
 

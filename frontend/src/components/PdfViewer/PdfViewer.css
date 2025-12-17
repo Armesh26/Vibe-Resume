@@ -61,8 +61,15 @@
   flex: 1;
   overflow: auto;
   display: flex;
+  align-items: flex-start;
+  justify-content: center;
   background: var(--bg-tertiary);
   min-height: 0;
+}
+
+/* Center placeholder vertically when no PDF */
+.pdf-content:has(.pdf-placeholder) {
+  align-items: center;
 }
 
 .pdf-iframe {
@@ -129,7 +136,7 @@
 
 .pdf-canvas {
   background: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 10px var(--shadow);
   cursor: crosshair;
 }
 

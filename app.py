@@ -21,7 +21,12 @@ app = Flask(__name__)
 
 # Configure Gemini
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-3-pro-preview')
+model_pro = genai.GenerativeModel('gemini-3-pro-preview')
+model_fast = genai.GenerativeModel('gemini-2.5-flash')
+
+def get_model(pro_mode: bool = False):
+    """Get the appropriate model based on mode."""
+    return model_pro if pro_mode else model_fast
 
 # Store generated PDFs temporarily - normalize path to avoid double slashes
 TEMP_DIR = os.path.normpath(os.path.join(tempfile.gettempdir(), 'latex_resumes'))
@@ -447,7 +452,7 @@ def is_image_file(filename: str) -> bool:
     return ext in image_extensions
 
 
-def process_image_with_gemini(image_file, message: str = "") -> str:
+def process_image_with_gemini(image_file, message: str = "", pro_mode: bool = False) -> str:
     """Process image with Gemini vision and extract resume content."""
     try:
         import base64
@@ -487,6 +492,7 @@ Format the output as plain text that can be used to recreate this resume."""
         if message:
             prompt += f"\n\nAdditional user request: {message}"
         
+        model = get_model(pro_mode)
         response = model.generate_content(
             [prompt, image_part],
             generation_config=genai.types.GenerationConfig(temperature=0.2)
@@ -530,9 +536,10 @@ INSTRUCTIONS:
 Do NOT output any LaTeX code. Respond conversationally."""
 
 
-def validate_request(user_input: str) -> tuple:
+def validate_request(user_input: str, pro_mode: bool = False) -> tuple:
     """Check request type. Returns (request_type, message)."""
     try:
+        model = get_model(pro_mode)
         response = model.generate_content(
             [VALIDATION_PROMPT, f"User input: {user_input}"],
             generation_config=genai.types.GenerationConfig(temperature=0.1)
@@ -553,10 +560,11 @@ def validate_request(user_input: str) -> tuple:
         return "generate", None
 
 
-def get_advice_response(question: str, context: str = "") -> str:
+def get_advice_response(question: str, context: str = "", pro_mode: bool = False) -> str:
     """Get conversational advice about resume content."""
     try:
         prompt = ADVICE_PROMPT.format(context=context or "No resume loaded yet", question=question)
+        model = get_model(pro_mode)
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(temperature=0.7)
@@ -566,7 +574,7 @@ def get_advice_response(question: str, context: str = "") -> str:
         return f"I'd be happy to help with that! Could you provide more details about what you'd like to change?"
 
 
-def generate_latex_with_gemini(user_input: str, is_modification: bool = False) -> str:
+def generate_latex_with_gemini(user_input: str, is_modification: bool = False, pro_mode: bool = False) -> str:
     """Use Gemini to generate LaTeX code from user input."""
     try:
         if is_modification:
@@ -582,6 +590,7 @@ Remember: Output ONLY valid LaTeX code, no explanations."""
 
 Remember: Output ONLY valid LaTeX code, no explanations or markdown code blocks."""
         
+        model = get_model(pro_mode)
         response = model.generate_content(
             [LATEX_SYSTEM_PROMPT, prompt],
             generation_config=genai.types.GenerationConfig(
@@ -652,6 +661,7 @@ def chat():
     message = request.form.get('message', '')
     uploaded_file = request.files.get('pdf')
     current_latex = request.form.get('current_latex', '')
+    pro_mode = request.form.get('pro_mode', 'false').lower() == 'true'
     
     user_input = message
     file_content = ""
@@ -671,7 +681,7 @@ def chat():
     if uploaded_file and uploaded_file.filename:
         if is_image_file(uploaded_file.filename):
             # Process image with Gemini vision
-            file_content = process_image_with_gemini(uploaded_file, message)
+            file_content = process_image_with_gemini(uploaded_file, message, pro_mode)
             user_input = f"Resume content from image:\n{file_content}\n\nUser request: {message}" if message else f"Create a LaTeX resume from this content:\n{file_content}"
         else:
             # Process PDF
@@ -687,7 +697,7 @@ def chat():
         error_message = None
     else:
         # Validate and categorize the request
-        request_type, error_message = validate_request(user_input)
+        request_type, error_message = validate_request(user_input, pro_mode)
     
     if request_type == "invalid":
         return jsonify({'success': False, 'error': error_message, 'is_chat_response': True})
@@ -695,14 +705,14 @@ def chat():
     if request_type == "question":
         # User is asking for advice - respond conversationally with full context
         context = current_latex if current_latex else "No resume loaded yet. Please create or upload a resume first."
-        advice = get_advice_response(message, context)
+        advice = get_advice_response(message, context, pro_mode)
         return jsonify({'success': False, 'error': advice, 'is_chat_response': True})
     
     # request_type == "generate" - create/modify resume
     if current_latex and message and not uploaded_file:
         user_input = f"Current LaTeX code:\n{current_latex}\n\nModification request: {message}"
     
-    latex_code = generate_latex_with_gemini(user_input, is_modification=bool(current_latex and not uploaded_file))
+    latex_code = generate_latex_with_gemini(user_input, is_modification=bool(current_latex and not uploaded_file), pro_mode=pro_mode)
     
     if latex_code.startswith('Error'):
         return jsonify({'success': False, 'error': latex_code})

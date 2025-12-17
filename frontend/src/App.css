@@ -35,6 +35,8 @@
   min-height: 0;
   transition: width 0.3s ease, min-width 0.3s ease, opacity 0.3s ease;
   overflow: hidden;
+  will-change: width;
+  contain: layout style;
 }
 
 .editor-wrapper.hidden {
@@ -52,6 +54,8 @@
   min-width: 250px;
   flex-shrink: 0;
   min-height: 0;
+  will-change: width;
+  contain: layout style;
 }
 
 /* Resize handles */
@@ -79,12 +83,25 @@
   pointer-events: none;
 }
 
-/* Disable pointer events on iframes during resize to prevent them from capturing mouse events */
+/* Disable pointer events on heavy components during resize */
 .panels.is-resizing iframe,
 .panels.is-resizing canvas,
 .panels.is-resizing embed,
-.panels.is-resizing object {
+.panels.is-resizing object,
+.panels.is-resizing .cm-editor {
   pointer-events: none;
+}
+
+/* Disable transitions during resize for instant feedback */
+.panels.is-resizing .editor-wrapper,
+.panels.is-resizing .chat-wrapper,
+.panels.is-resizing .preview-wrapper {
+  transition: none !important;
+}
+
+/* Optimize CodeMirror during resize - prevent layout recalculations */
+.panels.is-resizing .cm-editor {
+  contain: strict;
 }
 
 /* Toast notifications */

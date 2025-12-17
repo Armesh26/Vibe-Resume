@@ -1,29 +1,60 @@
-import { Eye, EyeOff, Download } from 'lucide-react';
+import { Eye, EyeOff, Download, Sun, Moon, Zap, Sparkles } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 import './Header.css';
 
-export default function Header({ showEditor, onToggleEditor, onDownload, canDownload }) {
+export default function Header({ showEditor, onToggleEditor, onDownload, canDownload, proMode, onToggleProMode }) {
+  const { theme, toggleTheme } = useTheme();
+  
   return (
     <header className="header">
       <div className="logo">
-        <span className="logo-icon">✨</span>
-        <span className="logo-text">Vibe-Resume</span>
+        <img 
+          src={theme === 'dark' ? '/darklogo.jpg' : '/lightlogo.png'} 
+          alt="Vibe-Resume" 
+          className="logo-image"
+        />
       </div>
 
       <div className="header-actions">
+        {/* Mode Toggle Switch */}
+        <div className="mode-toggle" onClick={onToggleProMode} title={proMode ? 'PRO mode (slower, higher quality)' : 'Fast mode (quick responses)'}>
+          <div className={`mode-switch ${proMode ? 'pro' : 'fast'}`}>
+            <div className="mode-option fast">
+              <Zap size={12} />
+              <span>Fast</span>
+            </div>
+            <div className="mode-option pro">
+              <Sparkles size={12} />
+              <span>PRO</span>
+            </div>
+            <div className="mode-slider" />
+          </div>
+        </div>
+        
         <button 
-          className={`toggle-editor-btn ${showEditor ? 'active' : ''}`}
-          onClick={onToggleEditor}
+          className="icon-btn theme-toggle-btn"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          {showEditor ? <EyeOff size={16} /> : <Eye size={16} />}
-          {showEditor ? 'Hide LaTeX' : 'Show LaTeX'}
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         
-        {canDownload && (
-          <button className="download-btn" onClick={onDownload}>
-            <Download size={16} />
-            Download
-          </button>
-        )}
+        <button 
+          className={`icon-btn toggle-editor-btn ${showEditor ? 'active' : ''}`}
+          onClick={onToggleEditor}
+          title={showEditor ? 'Hide LaTeX' : 'Show LaTeX'}
+        >
+          {showEditor ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+        
+        <button 
+          className={`icon-btn download-btn ${!canDownload ? 'disabled' : ''}`}
+          onClick={onDownload}
+          disabled={!canDownload}
+          title={canDownload ? "Download PDF" : "Generate a resume first"}
+        >
+          <Download size={18} />
+        </button>
       </div>
     </header>
   );

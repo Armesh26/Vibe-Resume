@@ -4,11 +4,13 @@ import { StreamLanguage } from '@codemirror/language';
 import { stex } from '@codemirror/legacy-modes/mode/stex';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { useSession } from '../../context/SessionContext';
+import { useTheme } from '../../context/ThemeContext';
 import { Code, Play, Trash2 } from 'lucide-react';
 import './LatexEditor.css';
 
 export default function LatexEditor({ onCompile, isCompiling, targetLine, onLineNavigated }) {
   const { currentSession, updateCurrentSession } = useSession();
+  const { theme } = useTheme();
   const editorRef = useRef(null);
   
   const latex = currentSession?.latex || '';
@@ -58,7 +60,7 @@ export default function LatexEditor({ onCompile, isCompiling, targetLine, onLine
           ref={editorRef}
           value={latex}
           height="100%"
-          theme={oneDark}
+          theme={theme === 'dark' ? oneDark : 'light'}
           extensions={[StreamLanguage.define(stex)]}
           onChange={handleChange}
           placeholder="LaTeX code will appear here..."

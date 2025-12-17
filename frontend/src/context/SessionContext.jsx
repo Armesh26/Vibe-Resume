@@ -9,7 +9,11 @@ function cloneSession(session) {
   if (!session) return null;
   return {
     ...session,
-    messages: session.messages ? [...session.messages.map(m => ({ ...m }))] : [],
+    messages: session.messages ? [...session.messages.map(m => ({
+      ...m,
+      // Deep clone checkpoint if it exists
+      checkpoint: m.checkpoint ? { ...m.checkpoint } : undefined
+    }))] : [],
     checkpoints: session.checkpoints ? [...session.checkpoints.map(c => ({ ...c }))] : [],
   };
 }
@@ -126,9 +130,12 @@ export function SessionProvider({ children }) {
       // Create a new session object with updated values
       const updated = { ...s };
       
-      // Handle messages array - always create new array
+      // Handle messages array - always create new array with deep cloned checkpoints
       if (updates.messages !== undefined) {
-        updated.messages = [...updates.messages.map(m => ({ ...m }))];
+        updated.messages = [...updates.messages.map(m => ({
+          ...m,
+          checkpoint: m.checkpoint ? { ...m.checkpoint } : undefined
+        }))];
       }
       
       // Handle checkpoints array - always create new array  

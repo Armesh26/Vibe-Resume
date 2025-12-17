@@ -62,7 +62,6 @@
 }
 
 .editor-content .cm-gutters {
-  background: var(--bg-tertiary);
   border-right: 1px solid var(--border);
 }
 

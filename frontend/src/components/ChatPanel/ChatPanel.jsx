@@ -3,11 +3,10 @@ import { useSession } from '../../context/SessionContext';
 import { 
   Sparkles, 
   Trash2, 
-  Upload, 
+  Paperclip, 
   Send, 
   Square, 
   RotateCcw,
-  Paperclip,
   X
 } from 'lucide-react';
 import './ChatPanel.css';
@@ -16,6 +15,7 @@ export default function ChatPanel({ onSendMessage, onRestore, onStop }) {
   const { currentSession, currentSessionId, updateCurrentSession, isPending } = useSession();
   const [input, setInput] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -67,6 +67,34 @@ export default function ChatPanel({ onSendMessage, onRestore, onStop }) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+      if (validTypes.includes(file.type)) {
+        setSelectedFile(file);
+      }
+    }
+  };
+
   const handleClearChat = () => {
     if (window.confirm('Clear this chat history?')) {
       updateCurrentSession({ messages: [], checkpoints: [] });
@@ -81,7 +109,7 @@ export default function ChatPanel({ onSendMessage, onRestore, onStop }) {
           AI Assistant
         </div>
         <button className="clear-chat-btn" onClick={handleClearChat} title="Clear chat">
-          <Trash2 size={16} />
+          <Trash2 size={18} />
         </button>
       </div>
 
@@ -124,44 +152,61 @@ export default function ChatPanel({ onSendMessage, onRestore, onStop }) {
       </div>
 
       <div className="chat-input-area">
-        <div className="file-upload">
-          <label className={`upload-btn ${selectedFile ? 'has-file' : ''}`}>
-            <Upload size={16} />
-            <span>{selectedFile ? selectedFile.name : 'Upload PDF/Image'}</span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg,.gif,.webp"
-              onChange={handleFileSelect}
-              hidden
-            />
-          </label>
-          {selectedFile && (
+        {selectedFile && (
+          <div className="selected-file">
+            <Paperclip size={14} />
+            <span>{selectedFile.name}</span>
             <button className="clear-file-btn" onClick={clearFile}>
               <X size={14} />
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        <form className="input-form" onSubmit={handleSubmit}>
+        <form 
+          className={`input-form ${isDragging ? 'dragging' : ''}`} 
+          onSubmit={handleSubmit}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Describe your resume..."
+            placeholder={isDragging ? "Drop file here..." : "Describe your resume or drop a file..."}
             rows={1}
             disabled={isLoading}
           />
-          {isLoading ? (
-            <button type="button" className="stop-btn" onClick={onStop}>
-              <Square size={16} />
+          
+          <div className="input-buttons">
+            <label className={`icon-btn attach-btn ${selectedFile ? 'has-file' : ''}`} title="Attach PDF or image">
+              <Paperclip size={18} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.gif,.webp"
+                onChange={handleFileSelect}
+                hidden
+              />
+            </label>
+            
+            <button 
+              type="button" 
+              className={`icon-btn stop-btn ${isLoading ? 'visible' : ''}`}
+              onClick={onStop} 
+              title="Stop"
+            >
+              <Square size={18} />
             </button>
-          ) : (
-            <button type="submit" className="send-btn">
-              <Send size={16} />
+            <button 
+              type="submit" 
+              className={`icon-btn send-btn ${!isLoading ? 'visible' : ''}`}
+              title="Send"
+            >
+              <Send size={18} />
             </button>
-          )}
+          </div>
         </form>
       </div>
     </div>

@@ -30,3 +30,6 @@ static/pdfs/
 # macOS
 .DS_Store
 
+# Vite cache
+frontend/.vite/
+

@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Build outputs (will be built in Docker)
+frontend/dist/
+static/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Temp files
+*.log
+*.tmp
+chat_histories/
+chat_history.json
+
+# OS
+.DS_Store
+Thumbs.db

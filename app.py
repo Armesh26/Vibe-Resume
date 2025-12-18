@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file, jsonify, send_from_directory
 from typing import Optional, Tuple, Dict
 import subprocess
 import os
@@ -658,7 +658,23 @@ Remember: Output ONLY valid LaTeX code, no explanations or markdown code blocks.
 
 @app.route('/')
 def index():
+    # Serve React frontend in production, Flask template in development
+    static_dir = os.path.join(os.path.dirname(__file__), 'static')
+    if os.path.exists(os.path.join(static_dir, 'index.html')):
+        return send_from_directory(static_dir, 'index.html')
     return render_template('index.html', templates=list(SAMPLE_TEMPLATES.keys()))
+
+
+@app.route('/<path:path>')
+def serve_static(path):
+    """Serve static files for React frontend."""
+    static_dir = os.path.join(os.path.dirname(__file__), 'static')
+    if os.path.exists(os.path.join(static_dir, path)):
+        return send_from_directory(static_dir, path)
+    # For client-side routing, return index.html
+    if os.path.exists(os.path.join(static_dir, 'index.html')):
+        return send_from_directory(static_dir, 'index.html')
+    return "Not found", 404
 
 
 @app.route('/get_template/<name>')

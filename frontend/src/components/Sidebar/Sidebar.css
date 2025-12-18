@@ -1,0 +1,282 @@
+.sidebar {
+  position: relative;
+  min-width: 260px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.25s ease-out, 
+              min-width 0.25s ease-out, 
+              border-color 0.25s ease;
+}
+
+.sidebar.collapsed {
+  min-width: 0;
+  border-right-color: transparent;
+}
+
+.sidebar-content {
+  width: 260px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Toggle button - fixed position on left edge */
+.toggle-btn {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease, left 0.3s ease;
+  z-index: 100;
+}
+
+/* When sidebar is expanded, button is at sidebar edge */
+.sidebar:not(.collapsed) .toggle-btn {
+  left: 260px;
+}
+
+.toggle-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  width: 28px;
+}
+
+.toggle-btn svg {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-btn.collapsed svg {
+  transform: rotate(0deg);
+}
+
+.toggle-btn:not(.collapsed) svg {
+  transform: rotate(0deg);
+}
+
+.toggle-btn:hover svg {
+  animation: nudge 0.4s ease infinite;
+}
+
+@keyframes nudge {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(2px); }
+}
+
+/* Sidebar header */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  animation: fadeSlideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sidebar.collapsed .sidebar-header {
+  animation: none;
+}
+
+.sidebar-header h2 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+}
+
+/* Sessions list */
+.sessions-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s ease, opacity 0.3s ease, transform 0.3s ease;
+  position: relative;
+  animation: slideInItem 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+@keyframes slideInItem {
+  from {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sidebar.collapsed .session-item {
+  animation: none;
+}
+
+.session-item:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  transform: translateX(4px);
+}
+
+.session-item.active {
+  background: var(--accent);
+  color: white;
+}
+
+.session-item.active:hover {
+  transform: translateX(4px);
+}
+
+.session-item svg:first-child {
+  transition: transform 0.2s ease;
+}
+
+.session-item:hover svg:first-child {
+  transform: scale(1.1);
+}
+
+.session-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.pending-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Delete button */
+.delete-btn {
+  opacity: 0;
+  color: inherit;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.session-item:hover .delete-btn {
+  opacity: 0.7;
+}
+
+.delete-btn:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.1);
+}
+
+.delete-btn:hover svg {
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+
+/* New chat button */
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 8px;
+  padding: 12px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  animation: fadeSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s backwards;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sidebar.collapsed .new-chat-btn {
+  animation: none;
+}
+
+.new-chat-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.new-chat-btn:hover:not(.disabled) {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  transform: scale(1.02);
+}
+
+.new-chat-btn:hover:not(.disabled) svg {
+  animation: rotate-plus 0.5s ease;
+}
+
+@keyframes rotate-plus {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(180deg); }
+}
+
+.new-chat-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

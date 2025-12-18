@@ -1,0 +1,143 @@
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.panels {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+}
+
+.editor-wrapper {
+  min-width: 200px;
+  flex-shrink: 0;
+  min-height: 0;
+  transition: width 0.3s ease, min-width 0.3s ease, opacity 0.3s ease;
+  overflow: hidden;
+  will-change: width;
+  contain: layout style;
+}
+
+.editor-wrapper.hidden {
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.preview-wrapper {
+  min-width: 200px;
+  min-height: 0;
+}
+
+.chat-wrapper {
+  min-width: 250px;
+  flex-shrink: 0;
+  min-height: 0;
+  will-change: width;
+  contain: layout style;
+}
+
+/* Resize handles */
+.resize-handle {
+  width: 4px;
+  background: var(--border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  transition: background 0.15s ease, width 0.3s ease, opacity 0.3s ease;
+}
+
+.resize-handle:hover {
+  background: var(--accent);
+}
+
+.resize-handle:active {
+  background: var(--accent);
+}
+
+.resize-handle.hidden {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Disable pointer events on heavy components during resize */
+.panels.is-resizing iframe,
+.panels.is-resizing canvas,
+.panels.is-resizing embed,
+.panels.is-resizing object,
+.panels.is-resizing .cm-editor {
+  pointer-events: none;
+}
+
+/* Disable transitions during resize for instant feedback */
+.panels.is-resizing .editor-wrapper,
+.panels.is-resizing .chat-wrapper,
+.panels.is-resizing .preview-wrapper {
+  transition: none !important;
+}
+
+/* Optimize CodeMirror during resize - prevent layout recalculations */
+.panels.is-resizing .cm-editor {
+  contain: strict;
+}
+
+/* Toast notifications */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: slideInUp 0.3s ease;
+}
+
+.toast.success {
+  border-left: 3px solid var(--success);
+}
+
+.toast.error {
+  border-left: 3px solid var(--error);
+}
+
+.toast.info {
+  border-left: 3px solid var(--info);
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

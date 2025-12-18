@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, send_file, jsonify
-from typing import Optional, Tuple
+from flask import Flask, render_template, request, send_file, jsonify, send_from_directory
+from typing import Optional, Tuple, Dict
 import subprocess
 import os
 import tempfile
@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 import re
 import json
 from datetime import datetime
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 
@@ -21,11 +22,27 @@ app = Flask(__name__)
 
 # Configure Gemini
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-3-pro-preview')
+model_pro = genai.GenerativeModel('gemini-3-pro-preview')
+model_fast = genai.GenerativeModel('gemini-2.5-flash')
+
+def get_model(pro_mode: bool = False):
+    """Get the appropriate model based on mode."""
+    return model_pro if pro_mode else model_fast
 
 # Store generated PDFs temporarily - normalize path to avoid double slashes
 TEMP_DIR = os.path.normpath(os.path.join(tempfile.gettempdir(), 'latex_resumes'))
 os.makedirs(TEMP_DIR, exist_ok=True)
+
+# Store uploaded images per session: {session_id: {filename: temp_path}}
+SESSION_IMAGES: Dict[str, Dict[str, str]] = {}
+
+# Allowed image extensions for resume images
+ALLOWED_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp'}
+
+def allowed_image_file(filename: str) -> bool:
+    """Check if file has an allowed image extension."""
+    ext = os.path.splitext(filename.lower())[1]
+    return ext in ALLOWED_IMAGE_EXTENSIONS
 
 # Chat history directory - store each chat by ID
 CHAT_HISTORY_DIR = os.path.join(os.path.dirname(__file__), 'chat_histories')
@@ -72,6 +89,9 @@ SAMPLE_TEMPLATES = {
 \usepackage{titlesec}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{fontawesome5}
+\usepackage{tikz}
 
 \geometry{margin=0.75in}
 \pagestyle{empty}
@@ -85,10 +105,10 @@ SAMPLE_TEMPLATES = {
 
 \begin{center}
     {\Huge\bfseries John Doe}\\[0.3em]
-    \href{mailto:john.doe@email.com}{john.doe@email.com} | 
-    (555) 123-4567 | 
-    San Francisco, CA | 
-    \href{https://linkedin.com/in/johndoe}{linkedin.com/in/johndoe}
+    \faEnvelope\ \href{mailto:john.doe@email.com}{john.doe@email.com} | 
+    \faPhone\ (555) 123-4567 | 
+    \faMapMarker\ San Francisco, CA | 
+    \faLinkedin\ \href{https://linkedin.com/in/johndoe}{linkedin.com/in/johndoe}
 \end{center}
 
 \section{Experience}
@@ -125,6 +145,9 @@ SAMPLE_TEMPLATES = {
 \usepackage{titlesec}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{fontawesome5}
+\usepackage{tikz}
 
 \geometry{margin=0.6in}
 \pagestyle{empty}
@@ -133,6 +156,7 @@ SAMPLE_TEMPLATES = {
 \definecolor{accent}{RGB}{52, 152, 219}
 \definecolor{darkgray}{RGB}{51, 51, 51}
 \definecolor{lightgray}{RGB}{150, 150, 150}
+\definecolor{skillbg}{RGB}{230, 230, 230}
 
 \titleformat{\section}{\Large\bfseries\color{darkgray}}{}{0em}{}
 \titlespacing*{\section}{0pt}{2ex}{1.5ex}
@@ -143,8 +167,8 @@ SAMPLE_TEMPLATES = {
 
 \begin{center}
     {\fontsize{28}{34}\selectfont\bfseries\color{darkgray} Sarah Johnson}\\[0.5em]
-    {\color{lightgray} sarah.johnson@email.com \quad (555) 987-6543 \quad New York, NY}\\[0.3em]
-    {\color{accent}\href{https://linkedin.com/in/sarahjohnson}{linkedin.com/in/sarahjohnson} \quad \href{https://github.com/sarahjohnson}{github.com/sarahjohnson}}
+    {\color{lightgray} \faEnvelope\ sarah.johnson@email.com \quad \faPhone\ (555) 987-6543 \quad \faMapMarker\ New York, NY}\\[0.3em]
+    {\color{accent}\faLinkedin\ \href{https://linkedin.com/in/sarahjohnson}{linkedin.com/in/sarahjohnson} \quad \faGithub\ \href{https://github.com/sarahjohnson}{github.com/sarahjohnson}}
 \end{center}
 
 \vspace{1em}
@@ -194,6 +218,9 @@ USE THIS EXACT TEMPLATE STRUCTURE WITH COLORS:
 \\usepackage{titlesec}
 \\usepackage{hyperref}
 \\usepackage{xcolor}
+\\usepackage{graphicx}
+\\usepackage{fontawesome5}
+\\usepackage{tikz}
 
 \\geometry{margin=0.5in}
 \\pagestyle{empty}
@@ -203,6 +230,7 @@ USE THIS EXACT TEMPLATE STRUCTURE WITH COLORS:
 \\definecolor{accent}{RGB}{44, 62, 80}
 \\definecolor{darkblue}{RGB}{0, 51, 102}
 \\definecolor{lightgray}{RGB}{100, 100, 100}
+\\definecolor{skillbg}{RGB}{230, 230, 230}
 
 \\titleformat{\\section}{\\large\\bfseries\\color{accent}\\uppercase}{}{0em}{}[\\titlerule]
 \\titlespacing*{\\section}{0pt}{8pt}{4pt}
@@ -212,7 +240,8 @@ USE THIS EXACT TEMPLATE STRUCTURE WITH COLORS:
 
 \\begin{center}
 {\\LARGE \\textbf{NAME HERE}}\\\\[0.3em]
-{\\color{lightgray} phone $|$ email $|$ location}
+{\\color{lightgray} \\faPhone\\ phone $|$ \\faEnvelope\\ email $|$ \\faMapMarker\\ location}\\\\[0.2em]
+{\\faLinkedin\\ \\href{https://linkedin.com/in/username}{linkedin.com/in/username} $|$ \\faGithub\\ \\href{https://github.com/username}{github.com/username}}
 \\end{center}
 
 \\section{Education}
@@ -230,7 +259,17 @@ Degree Name
 
 \\end{document}
 
-IMPORTANT: Always define ALL colors at the top using \\definecolor before using them anywhere in the document."""
+ICONS AND IMAGES SUPPORT:
+- Use FontAwesome5 icons for contact info: \\faPhone, \\faEnvelope, \\faMapMarker, \\faLinkedin, \\faGithub, \\faGlobe, \\faTwitter
+- For profile photos: \\includegraphics[width=2.5cm]{filename.jpg} - place in header area
+- For skill bars, use TikZ:
+  \\begin{tikzpicture}
+  \\fill[skillbg] (0,0) rectangle (3,0.15);
+  \\fill[accent] (0,0) rectangle (2.4,0.15); % 80% filled
+  \\end{tikzpicture}
+
+IMPORTANT: Always define ALL colors at the top using \\definecolor before using them anywhere in the document.
+When user provides an image filename, include it with \\includegraphics[width=Xcm]{filename}."""
 
 
 def find_pdflatex() -> Optional[str]:
@@ -253,7 +292,7 @@ def find_pdflatex() -> Optional[str]:
     return None
 
 
-def compile_latex(latex_code: str) -> Tuple[bool, str, Optional[str]]:
+def compile_latex(latex_code: str, session_id: str = None) -> Tuple[bool, str, Optional[str]]:
     """Compile LaTeX code to PDF. Returns (success, message, pdf_path)."""
     
     pdflatex_path = find_pdflatex()
@@ -268,6 +307,13 @@ def compile_latex(latex_code: str) -> Tuple[bool, str, Optional[str]]:
     pdf_file = os.path.join(job_dir, 'resume.pdf')
     
     try:
+        # Copy session images to the job directory for compilation
+        if session_id and session_id in SESSION_IMAGES:
+            for filename, src_path in SESSION_IMAGES[session_id].items():
+                if os.path.exists(src_path):
+                    dst_path = os.path.join(job_dir, filename)
+                    shutil.copy2(src_path, dst_path)
+        
         with open(tex_file, 'w', encoding='utf-8') as f:
             f.write(latex_code)
         
@@ -447,7 +493,7 @@ def is_image_file(filename: str) -> bool:
     return ext in image_extensions
 
 
-def process_image_with_gemini(image_file, message: str = "") -> str:
+def process_image_with_gemini(image_file, message: str = "", pro_mode: bool = False) -> str:
     """Process image with Gemini vision and extract resume content."""
     try:
         import base64
@@ -487,6 +533,7 @@ Format the output as plain text that can be used to recreate this resume."""
         if message:
             prompt += f"\n\nAdditional user request: {message}"
         
+        model = get_model(pro_mode)
         response = model.generate_content(
             [prompt, image_part],
             generation_config=genai.types.GenerationConfig(temperature=0.2)
@@ -530,9 +577,10 @@ INSTRUCTIONS:
 Do NOT output any LaTeX code. Respond conversationally."""
 
 
-def validate_request(user_input: str) -> tuple:
+def validate_request(user_input: str, pro_mode: bool = False) -> tuple:
     """Check request type. Returns (request_type, message)."""
     try:
+        model = get_model(pro_mode)
         response = model.generate_content(
             [VALIDATION_PROMPT, f"User input: {user_input}"],
             generation_config=genai.types.GenerationConfig(temperature=0.1)
@@ -553,10 +601,11 @@ def validate_request(user_input: str) -> tuple:
         return "generate", None
 
 
-def get_advice_response(question: str, context: str = "") -> str:
+def get_advice_response(question: str, context: str = "", pro_mode: bool = False) -> str:
     """Get conversational advice about resume content."""
     try:
         prompt = ADVICE_PROMPT.format(context=context or "No resume loaded yet", question=question)
+        model = get_model(pro_mode)
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(temperature=0.7)
@@ -566,7 +615,7 @@ def get_advice_response(question: str, context: str = "") -> str:
         return f"I'd be happy to help with that! Could you provide more details about what you'd like to change?"
 
 
-def generate_latex_with_gemini(user_input: str, is_modification: bool = False) -> str:
+def generate_latex_with_gemini(user_input: str, is_modification: bool = False, pro_mode: bool = False) -> str:
     """Use Gemini to generate LaTeX code from user input."""
     try:
         if is_modification:
@@ -582,6 +631,7 @@ Remember: Output ONLY valid LaTeX code, no explanations."""
 
 Remember: Output ONLY valid LaTeX code, no explanations or markdown code blocks."""
         
+        model = get_model(pro_mode)
         response = model.generate_content(
             [LATEX_SYSTEM_PROMPT, prompt],
             generation_config=genai.types.GenerationConfig(
@@ -608,7 +658,23 @@ Remember: Output ONLY valid LaTeX code, no explanations or markdown code blocks.
 
 @app.route('/')
 def index():
+    # Serve React frontend in production, Flask template in development
+    static_dir = os.path.join(os.path.dirname(__file__), 'static')
+    if os.path.exists(os.path.join(static_dir, 'index.html')):
+        return send_from_directory(static_dir, 'index.html')
     return render_template('index.html', templates=list(SAMPLE_TEMPLATES.keys()))
+
+
+@app.route('/<path:path>')
+def serve_static(path):
+    """Serve static files for React frontend."""
+    static_dir = os.path.join(os.path.dirname(__file__), 'static')
+    if os.path.exists(os.path.join(static_dir, path)):
+        return send_from_directory(static_dir, path)
+    # For client-side routing, return index.html
+    if os.path.exists(os.path.join(static_dir, 'index.html')):
+        return send_from_directory(static_dir, 'index.html')
+    return "Not found", 404
 
 
 @app.route('/get_template/<name>')
@@ -621,11 +687,12 @@ def get_template(name):
 @app.route('/compile', methods=['POST'])
 def compile_pdf():
     latex_code = request.json.get('latex_code', '')
+    session_id = request.json.get('session_id', None)
     
     if not latex_code.strip():
         return jsonify({'success': False, 'error': 'No LaTeX code provided'})
     
-    success, message, pdf_path = compile_latex(latex_code)
+    success, message, pdf_path = compile_latex(latex_code, session_id)
     
     if success and pdf_path:
         job_id = os.path.basename(os.path.dirname(pdf_path))
@@ -652,6 +719,7 @@ def chat():
     message = request.form.get('message', '')
     uploaded_file = request.files.get('pdf')
     current_latex = request.form.get('current_latex', '')
+    pro_mode = request.form.get('pro_mode', 'false').lower() == 'true'
     
     user_input = message
     file_content = ""
@@ -671,7 +739,7 @@ def chat():
     if uploaded_file and uploaded_file.filename:
         if is_image_file(uploaded_file.filename):
             # Process image with Gemini vision
-            file_content = process_image_with_gemini(uploaded_file, message)
+            file_content = process_image_with_gemini(uploaded_file, message, pro_mode)
             user_input = f"Resume content from image:\n{file_content}\n\nUser request: {message}" if message else f"Create a LaTeX resume from this content:\n{file_content}"
         else:
             # Process PDF
@@ -687,7 +755,7 @@ def chat():
         error_message = None
     else:
         # Validate and categorize the request
-        request_type, error_message = validate_request(user_input)
+        request_type, error_message = validate_request(user_input, pro_mode)
     
     if request_type == "invalid":
         return jsonify({'success': False, 'error': error_message, 'is_chat_response': True})
@@ -695,14 +763,14 @@ def chat():
     if request_type == "question":
         # User is asking for advice - respond conversationally with full context
         context = current_latex if current_latex else "No resume loaded yet. Please create or upload a resume first."
-        advice = get_advice_response(message, context)
+        advice = get_advice_response(message, context, pro_mode)
         return jsonify({'success': False, 'error': advice, 'is_chat_response': True})
     
     # request_type == "generate" - create/modify resume
     if current_latex and message and not uploaded_file:
         user_input = f"Current LaTeX code:\n{current_latex}\n\nModification request: {message}"
     
-    latex_code = generate_latex_with_gemini(user_input, is_modification=bool(current_latex and not uploaded_file))
+    latex_code = generate_latex_with_gemini(user_input, is_modification=bool(current_latex and not uploaded_file), pro_mode=pro_mode)
     
     if latex_code.startswith('Error'):
         return jsonify({'success': False, 'error': latex_code})
@@ -737,6 +805,90 @@ def clear_history():
     session_id = data.get('sessionId')
     save_chat_history({'messages': [], 'latex': '', 'checkpoints': []}, session_id)
     return jsonify({'success': True})
+
+
+@app.route('/upload-image', methods=['POST'])
+def upload_image():
+    """Upload an image for use in the resume."""
+    session_id = request.form.get('sessionId')
+    if not session_id:
+        return jsonify({'success': False, 'error': 'No session ID provided'})
+    
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': 'No image file provided'})
+    
+    image_file = request.files['image']
+    if not image_file.filename:
+        return jsonify({'success': False, 'error': 'No file selected'})
+    
+    if not allowed_image_file(image_file.filename):
+        return jsonify({'success': False, 'error': 'Invalid file type. Allowed: PNG, JPG, GIF, WebP'})
+    
+    # Create session image directory
+    session_image_dir = os.path.join(TEMP_DIR, 'images', session_id)
+    os.makedirs(session_image_dir, exist_ok=True)
+    
+    # Secure the filename and save
+    filename = secure_filename(image_file.filename)
+    # Add unique prefix to avoid collisions
+    unique_filename = f"{uuid.uuid4().hex[:8]}_{filename}"
+    file_path = os.path.join(session_image_dir, unique_filename)
+    image_file.save(file_path)
+    
+    # Track in session images
+    if session_id not in SESSION_IMAGES:
+        SESSION_IMAGES[session_id] = {}
+    SESSION_IMAGES[session_id][unique_filename] = file_path
+    
+    # Generate LaTeX snippet for the image
+    latex_snippet = f"\\includegraphics[width=2.5cm]{{{unique_filename}}}"
+    
+    return jsonify({
+        'success': True,
+        'filename': unique_filename,
+        'latex_snippet': latex_snippet,
+        'message': f'Image uploaded: {unique_filename}'
+    })
+
+
+@app.route('/session-images/<session_id>', methods=['GET'])
+def get_session_images(session_id):
+    """Get list of images uploaded for a session."""
+    images = SESSION_IMAGES.get(session_id, {})
+    return jsonify({
+        'success': True,
+        'images': list(images.keys())
+    })
+
+
+@app.route('/session-images/<session_id>/<filename>', methods=['GET'])
+def serve_session_image(session_id, filename):
+    """Serve an uploaded session image for preview."""
+    if session_id in SESSION_IMAGES and filename in SESSION_IMAGES[session_id]:
+        return send_file(SESSION_IMAGES[session_id][filename])
+    return "Image not found", 404
+
+
+@app.route('/delete-image', methods=['POST'])
+def delete_image():
+    """Delete an uploaded image."""
+    data = request.json or {}
+    session_id = data.get('sessionId')
+    filename = data.get('filename')
+    
+    if not session_id or not filename:
+        return jsonify({'success': False, 'error': 'Missing session ID or filename'})
+    
+    if session_id in SESSION_IMAGES and filename in SESSION_IMAGES[session_id]:
+        file_path = SESSION_IMAGES[session_id][filename]
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
+        del SESSION_IMAGES[session_id][filename]
+        return jsonify({'success': True})
+    
+    return jsonify({'success': False, 'error': 'Image not found'})
 
 
 def find_synctex() -> Optional[str]:

@@ -1,11 +1,12 @@
 # Build stage for frontend
 FROM node:18-slim AS frontend-builder
 
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
+WORKDIR /app
+COPY frontend/package*.json ./frontend/
+RUN cd frontend && npm ci
+COPY frontend/ ./frontend/
+# Build outputs to /app/static/react based on vite.config.js
+RUN cd frontend && npm run build
 
 # Production stage
 FROM python:3.11-slim
@@ -31,7 +32,7 @@ COPY app.py .
 COPY templates/ ./templates/
 
 # Copy built frontend from builder stage
-COPY --from=frontend-builder /app/frontend/dist ./static
+COPY --from=frontend-builder /app/static/react ./static
 
 # Create necessary directories
 RUN mkdir -p chat_histories

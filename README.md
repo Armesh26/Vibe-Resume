@@ -11,6 +11,11 @@ An intelligent resume builder that uses AI to generate professional LaTeX resume
   - Type your experience directly
   - Upload existing resume (PDF or image)
   - Paste LinkedIn/Twitter profile URLs
+- **Icons & Images Support**:
+  - 30+ FontAwesome icons for contact info, social links, and skills
+  - Upload profile photos and custom images
+  - Visual icon picker with search and categories
+  - TikZ-based skill bars and decorative elements
 - **Live Preview** - See your PDF render in real-time as changes are made
 - **LaTeX Editor** - Built-in code editor with syntax highlighting for manual tweaks
 - **Version Control** - Checkpoint system to restore previous versions
@@ -109,12 +114,24 @@ The built files will be in `frontend/dist/`. Configure your Flask app to serve t
 4. **Review and edit** - Use the LaTeX editor to make manual adjustments
 5. **Download** - Click the download button to get your PDF
 
+### Adding Icons & Images
+
+1. **Icons** - Click the "Icons" button to open the icon picker
+   - Browse by category: Contact, Social, Professional, Tech
+   - Search for specific icons
+   - Click to add to your resume elements
+2. **Images** - Click the "Image" button to upload photos/logos
+   - Supported formats: PNG, JPG, GIF, WebP
+   - Images appear as thumbnails in the Elements bar
+3. **Send your message** - The AI will incorporate your selected elements
+
 ### Tips
 
 - Use **Fast mode** for quick iterations while drafting
 - Switch to **PRO mode** for final polish and better formatting
 - Click on the PDF preview to jump to that section in the editor
 - Use checkpoints to restore previous versions if needed
+- Add icons for a modern, professional look (LinkedIn, GitHub, email icons)
 
 ## Project Structure
 
@@ -129,6 +146,7 @@ latex-resume-generator/
 │   │   ├── components/
 │   │   │   ├── ChatPanel/    # AI chat interface
 │   │   │   ├── Header/       # Top navigation
+│   │   │   ├── IconPicker/   # Icon selection modal
 │   │   │   ├── LatexEditor/  # Code editor
 │   │   │   ├── PdfViewer/    # PDF preview
 │   │   │   └── Sidebar/      # Session management
@@ -144,6 +162,9 @@ latex-resume-generator/
 | `/chat` | POST | Send message to AI, returns LaTeX code |
 | `/compile` | POST | Compile LaTeX to PDF |
 | `/pdf/<job_id>` | GET | Retrieve generated PDF |
+| `/upload-image` | POST | Upload image for resume |
+| `/session-images/<session_id>` | GET | List uploaded images |
+| `/delete-image` | POST | Remove uploaded image |
 | `/synctex/forward/<job_id>` | POST | Line number → PDF position |
 | `/synctex/reverse/<job_id>` | POST | PDF position → Line number |
 

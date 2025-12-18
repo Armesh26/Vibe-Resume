@@ -14,6 +14,9 @@ export default defineConfig({
       '/pdf': 'http://localhost:5050',
       '/get_template': 'http://localhost:5050',
       '/synctex': 'http://localhost:5050',
+      '/upload-image': 'http://localhost:5050',
+      '/session-images': 'http://localhost:5050',
+      '/delete-image': 'http://localhost:5050',
     }
   },
   build: {

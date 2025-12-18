@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, send_file, jsonify
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 import subprocess
 import os
 import tempfile
@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 import re
 import json
 from datetime import datetime
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 
@@ -31,6 +32,17 @@ def get_model(pro_mode: bool = False):
 # Store generated PDFs temporarily - normalize path to avoid double slashes
 TEMP_DIR = os.path.normpath(os.path.join(tempfile.gettempdir(), 'latex_resumes'))
 os.makedirs(TEMP_DIR, exist_ok=True)
+
+# Store uploaded images per session: {session_id: {filename: temp_path}}
+SESSION_IMAGES: Dict[str, Dict[str, str]] = {}
+
+# Allowed image extensions for resume images
+ALLOWED_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp'}
+
+def allowed_image_file(filename: str) -> bool:
+    """Check if file has an allowed image extension."""
+    ext = os.path.splitext(filename.lower())[1]
+    return ext in ALLOWED_IMAGE_EXTENSIONS
 
 # Chat history directory - store each chat by ID
 CHAT_HISTORY_DIR = os.path.join(os.path.dirname(__file__), 'chat_histories')
@@ -77,6 +89,9 @@ SAMPLE_TEMPLATES = {
 \usepackage{titlesec}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{fontawesome5}
+\usepackage{tikz}
 
 \geometry{margin=0.75in}
 \pagestyle{empty}
@@ -90,10 +105,10 @@ SAMPLE_TEMPLATES = {
 
 \begin{center}
     {\Huge\bfseries John Doe}\\[0.3em]
-    \href{mailto:john.doe@email.com}{john.doe@email.com} | 
-    (555) 123-4567 | 
-    San Francisco, CA | 
-    \href{https://linkedin.com/in/johndoe}{linkedin.com/in/johndoe}
+    \faEnvelope\ \href{mailto:john.doe@email.com}{john.doe@email.com} | 
+    \faPhone\ (555) 123-4567 | 
+    \faMapMarker\ San Francisco, CA | 
+    \faLinkedin\ \href{https://linkedin.com/in/johndoe}{linkedin.com/in/johndoe}
 \end{center}
 
 \section{Experience}
@@ -130,6 +145,9 @@ SAMPLE_TEMPLATES = {
 \usepackage{titlesec}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{fontawesome5}
+\usepackage{tikz}
 
 \geometry{margin=0.6in}
 \pagestyle{empty}
@@ -138,6 +156,7 @@ SAMPLE_TEMPLATES = {
 \definecolor{accent}{RGB}{52, 152, 219}
 \definecolor{darkgray}{RGB}{51, 51, 51}
 \definecolor{lightgray}{RGB}{150, 150, 150}
+\definecolor{skillbg}{RGB}{230, 230, 230}
 
 \titleformat{\section}{\Large\bfseries\color{darkgray}}{}{0em}{}
 \titlespacing*{\section}{0pt}{2ex}{1.5ex}
@@ -148,8 +167,8 @@ SAMPLE_TEMPLATES = {
 
 \begin{center}
     {\fontsize{28}{34}\selectfont\bfseries\color{darkgray} Sarah Johnson}\\[0.5em]
-    {\color{lightgray} sarah.johnson@email.com \quad (555) 987-6543 \quad New York, NY}\\[0.3em]
-    {\color{accent}\href{https://linkedin.com/in/sarahjohnson}{linkedin.com/in/sarahjohnson} \quad \href{https://github.com/sarahjohnson}{github.com/sarahjohnson}}
+    {\color{lightgray} \faEnvelope\ sarah.johnson@email.com \quad \faPhone\ (555) 987-6543 \quad \faMapMarker\ New York, NY}\\[0.3em]
+    {\color{accent}\faLinkedin\ \href{https://linkedin.com/in/sarahjohnson}{linkedin.com/in/sarahjohnson} \quad \faGithub\ \href{https://github.com/sarahjohnson}{github.com/sarahjohnson}}
 \end{center}
 
 \vspace{1em}
@@ -199,6 +218,9 @@ USE THIS EXACT TEMPLATE STRUCTURE WITH COLORS:
 \\usepackage{titlesec}
 \\usepackage{hyperref}
 \\usepackage{xcolor}
+\\usepackage{graphicx}
+\\usepackage{fontawesome5}
+\\usepackage{tikz}
 
 \\geometry{margin=0.5in}
 \\pagestyle{empty}
@@ -208,6 +230,7 @@ USE THIS EXACT TEMPLATE STRUCTURE WITH COLORS:
 \\definecolor{accent}{RGB}{44, 62, 80}
 \\definecolor{darkblue}{RGB}{0, 51, 102}
 \\definecolor{lightgray}{RGB}{100, 100, 100}
+\\definecolor{skillbg}{RGB}{230, 230, 230}
 
 \\titleformat{\\section}{\\large\\bfseries\\color{accent}\\uppercase}{}{0em}{}[\\titlerule]
 \\titlespacing*{\\section}{0pt}{8pt}{4pt}
@@ -217,7 +240,8 @@ USE THIS EXACT TEMPLATE STRUCTURE WITH COLORS:
 
 \\begin{center}
 {\\LARGE \\textbf{NAME HERE}}\\\\[0.3em]
-{\\color{lightgray} phone $|$ email $|$ location}
+{\\color{lightgray} \\faPhone\\ phone $|$ \\faEnvelope\\ email $|$ \\faMapMarker\\ location}\\\\[0.2em]
+{\\faLinkedin\\ \\href{https://linkedin.com/in/username}{linkedin.com/in/username} $|$ \\faGithub\\ \\href{https://github.com/username}{github.com/username}}
 \\end{center}
 
 \\section{Education}
@@ -235,7 +259,17 @@ Degree Name
 
 \\end{document}
 
-IMPORTANT: Always define ALL colors at the top using \\definecolor before using them anywhere in the document."""
+ICONS AND IMAGES SUPPORT:
+- Use FontAwesome5 icons for contact info: \\faPhone, \\faEnvelope, \\faMapMarker, \\faLinkedin, \\faGithub, \\faGlobe, \\faTwitter
+- For profile photos: \\includegraphics[width=2.5cm]{filename.jpg} - place in header area
+- For skill bars, use TikZ:
+  \\begin{tikzpicture}
+  \\fill[skillbg] (0,0) rectangle (3,0.15);
+  \\fill[accent] (0,0) rectangle (2.4,0.15); % 80% filled
+  \\end{tikzpicture}
+
+IMPORTANT: Always define ALL colors at the top using \\definecolor before using them anywhere in the document.
+When user provides an image filename, include it with \\includegraphics[width=Xcm]{filename}."""
 
 
 def find_pdflatex() -> Optional[str]:
@@ -258,7 +292,7 @@ def find_pdflatex() -> Optional[str]:
     return None
 
 
-def compile_latex(latex_code: str) -> Tuple[bool, str, Optional[str]]:
+def compile_latex(latex_code: str, session_id: str = None) -> Tuple[bool, str, Optional[str]]:
     """Compile LaTeX code to PDF. Returns (success, message, pdf_path)."""
     
     pdflatex_path = find_pdflatex()
@@ -273,6 +307,13 @@ def compile_latex(latex_code: str) -> Tuple[bool, str, Optional[str]]:
     pdf_file = os.path.join(job_dir, 'resume.pdf')
     
     try:
+        # Copy session images to the job directory for compilation
+        if session_id and session_id in SESSION_IMAGES:
+            for filename, src_path in SESSION_IMAGES[session_id].items():
+                if os.path.exists(src_path):
+                    dst_path = os.path.join(job_dir, filename)
+                    shutil.copy2(src_path, dst_path)
+        
         with open(tex_file, 'w', encoding='utf-8') as f:
             f.write(latex_code)
         
@@ -630,11 +671,12 @@ def get_template(name):
 @app.route('/compile', methods=['POST'])
 def compile_pdf():
     latex_code = request.json.get('latex_code', '')
+    session_id = request.json.get('session_id', None)
     
     if not latex_code.strip():
         return jsonify({'success': False, 'error': 'No LaTeX code provided'})
     
-    success, message, pdf_path = compile_latex(latex_code)
+    success, message, pdf_path = compile_latex(latex_code, session_id)
     
     if success and pdf_path:
         job_id = os.path.basename(os.path.dirname(pdf_path))
@@ -747,6 +789,90 @@ def clear_history():
     session_id = data.get('sessionId')
     save_chat_history({'messages': [], 'latex': '', 'checkpoints': []}, session_id)
     return jsonify({'success': True})
+
+
+@app.route('/upload-image', methods=['POST'])
+def upload_image():
+    """Upload an image for use in the resume."""
+    session_id = request.form.get('sessionId')
+    if not session_id:
+        return jsonify({'success': False, 'error': 'No session ID provided'})
+    
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': 'No image file provided'})
+    
+    image_file = request.files['image']
+    if not image_file.filename:
+        return jsonify({'success': False, 'error': 'No file selected'})
+    
+    if not allowed_image_file(image_file.filename):
+        return jsonify({'success': False, 'error': 'Invalid file type. Allowed: PNG, JPG, GIF, WebP'})
+    
+    # Create session image directory
+    session_image_dir = os.path.join(TEMP_DIR, 'images', session_id)
+    os.makedirs(session_image_dir, exist_ok=True)
+    
+    # Secure the filename and save
+    filename = secure_filename(image_file.filename)
+    # Add unique prefix to avoid collisions
+    unique_filename = f"{uuid.uuid4().hex[:8]}_{filename}"
+    file_path = os.path.join(session_image_dir, unique_filename)
+    image_file.save(file_path)
+    
+    # Track in session images
+    if session_id not in SESSION_IMAGES:
+        SESSION_IMAGES[session_id] = {}
+    SESSION_IMAGES[session_id][unique_filename] = file_path
+    
+    # Generate LaTeX snippet for the image
+    latex_snippet = f"\\includegraphics[width=2.5cm]{{{unique_filename}}}"
+    
+    return jsonify({
+        'success': True,
+        'filename': unique_filename,
+        'latex_snippet': latex_snippet,
+        'message': f'Image uploaded: {unique_filename}'
+    })
+
+
+@app.route('/session-images/<session_id>', methods=['GET'])
+def get_session_images(session_id):
+    """Get list of images uploaded for a session."""
+    images = SESSION_IMAGES.get(session_id, {})
+    return jsonify({
+        'success': True,
+        'images': list(images.keys())
+    })
+
+
+@app.route('/session-images/<session_id>/<filename>', methods=['GET'])
+def serve_session_image(session_id, filename):
+    """Serve an uploaded session image for preview."""
+    if session_id in SESSION_IMAGES and filename in SESSION_IMAGES[session_id]:
+        return send_file(SESSION_IMAGES[session_id][filename])
+    return "Image not found", 404
+
+
+@app.route('/delete-image', methods=['POST'])
+def delete_image():
+    """Delete an uploaded image."""
+    data = request.json or {}
+    session_id = data.get('sessionId')
+    filename = data.get('filename')
+    
+    if not session_id or not filename:
+        return jsonify({'success': False, 'error': 'Missing session ID or filename'})
+    
+    if session_id in SESSION_IMAGES and filename in SESSION_IMAGES[session_id]:
+        file_path = SESSION_IMAGES[session_id][filename]
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
+        del SESSION_IMAGES[session_id][filename]
+        return jsonify({'success': True})
+    
+    return jsonify({'success': False, 'error': 'Image not found'})
 
 
 def find_synctex() -> Optional[str]:

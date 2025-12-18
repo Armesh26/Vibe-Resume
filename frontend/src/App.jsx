@@ -108,7 +108,10 @@ function AppContent() {
       const response = await fetch('/compile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ latex_code: latex })
+        body: JSON.stringify({ 
+          latex_code: latex,
+          session_id: currentSessionId  // Pass session ID for image support
+        })
       });
 
       const data = await response.json();
@@ -123,7 +126,7 @@ function AppContent() {
     } finally {
       setIsCompiling(false);
     }
-  }, [currentSession?.latex, updateCurrentSession]);
+  }, [currentSession?.latex, currentSessionId, updateCurrentSession]);
 
   const handleSendMessage = useCallback(async (message, file) => {
     const requestSessionId = currentSessionId;

@@ -165,7 +165,125 @@
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+
+/* Chat Toolbar */
+.chat-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.toolbar-btn:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.toolbar-btn.uploading {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.toolbar-btn svg {
+  transition: transform 0.2s;
+}
+
+.toolbar-btn:hover svg {
+  transform: scale(1.1);
+}
+
+/* Elements Preview (Icons + Images) */
+.elements-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.elements-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.element-item {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Icon elements */
+.icon-element {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--accent-light);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  color: var(--accent);
+  transition: all 0.2s;
+}
+
+.icon-element:hover {
+  transform: scale(1.05);
+}
+
+/* Image elements */
+.image-element img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  transition: all 0.2s;
+}
+
+.image-element:hover img {
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+
+.remove-element-btn {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--error);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+
+.element-item:hover .remove-element-btn {
+  opacity: 1;
 }
 
 /* Selected file badge */
